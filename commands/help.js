@@ -6,7 +6,8 @@ async function helpCommand(sock, chatId) {
 ┃ *🤖 ${settings.botName || 'KnightBot-MD'}*  
 ┃ 🔹 Versión: *${settings.version || '1.0.0'}*
 ┗━━━━━━━━━━━━━━━
-*SIGAN EL CANAL https://whatsapp.com/channel/0029VajM7fxEAKWOOIhQbR0K*
+📢 *Sigue nuestro canal:* 
+👉 https://whatsapp.com/channel/0029VajM7fxEAKWOOIhQbR0K
 
 📌 *LISTA DE COMANDOS DISPONIBLES:*
 
@@ -70,7 +71,8 @@ async function helpCommand(sock, chatId) {
 💞 *.ship @usuario*
 
 🚀 *¡KnightBot siempre listo para ayudarte!*
-*SIGANME EN IG https://www.instagram.com/vilenkn?igsh=MWRpZDhsbTB3Y25wNA==*
+📸 *Sígueme en Instagram:* 
+👉 https://www.instagram.com/vilenkn
 `;
 
     try {
