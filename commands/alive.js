@@ -1,31 +1,20 @@
 async function aliveCommand(sock, chatId) {
     try {
-        const message = `*🤖 Knight Bot is Active!*\n\n` +
-                       `*Version:* 1.0.0\n` +
-                       `*Status:* Online\n` +
-                       `*Mode:* Public\n\n` +
-                       `*🌟 Features:*\n` +
-                       `• Group Management\n` +
-                       `• Antilink Protection\n` +
-                       `• Fun Commands\n` +
-                       `• And more!\n\n` +
-                       `Type *.menu* for full command list`;
+        const message = `*🤖 Knight Bot está activo!*\n\n` +
+                       `*Versión:* 1.0.0\n` +
+                       `*Estado:* En línea\n` +
+                       `*Modo:* Público\n\n` +
+                       `*🌟 Funciones:*\n` +
+                       `• Gestión de grupos\n` +
+                       `• Protección contra enlaces\n` +
+                       `• Comandos divertidos\n` +
+                       `• ¡Y mucho más!\n\n` +
+                       `Escribe *.menu* para ver la lista completa de comandos.`;
 
-        await sock.sendMessage(chatId, {
-            text: message,
-            contextInfo: {
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363161513685998@newsletter',
-                    newsletterName: 'KnightBot MD',
-                    serverMessageId: -1
-                }
-            }
-        });
+        await sock.sendMessage(chatId, { text: message });
     } catch (error) {
-        console.error('Error in alive command:', error);
-        await sock.sendMessage(chatId, { text: 'Bot is alive and running!' });
+        console.error('Error en el comando alive:', error);
+        await sock.sendMessage(chatId, { text: 'El bot está activo y en funcionamiento.' });
     }
 }
 
