@@ -1,60 +1,61 @@
 const fs = require('fs');
 
-const words = ['javascript', 'bot', 'hangman', 'whatsapp', 'nodejs'];
-let hangmanGames = {};
+// Lista de palabras para el ahorcado
+const palabras = ['javascript', 'bot', 'ahorcado', 'whatsapp', 'nodejs'];
+let juegosAhorcado = {};
 
-function startHangman(sock, chatId) {
-    const word = words[Math.floor(Math.random() * words.length)];
-    const maskedWord = '_ '.repeat(word.length).trim();
+function iniciarAhorcado(sock, chatId) {
+    const palabra = palabras[Math.floor(Math.random() * palabras.length)];
+    const palabraOculta = '_ '.repeat(palabra.length).trim();
 
-    hangmanGames[chatId] = {
-        word,
-        maskedWord: maskedWord.split(' '),
-        guessedLetters: [],
-        wrongGuesses: 0,
-        maxWrongGuesses: 6,
+    juegosAhorcado[chatId] = {
+        palabra,
+        palabraOculta: palabraOculta.split(' '),
+        letrasAdivinadas: [],
+        intentosIncorrectos: 0,
+        maxIntentos: 6,
     };
 
-    sock.sendMessage(chatId, { text: `Game started! The word is: ${maskedWord}` });
+    sock.sendMessage(chatId, { text: `🎮 ¡Juego iniciado! La palabra es: ${palabraOculta}` });
 }
 
-function guessLetter(sock, chatId, letter) {
-    if (!hangmanGames[chatId]) {
-        sock.sendMessage(chatId, { text: 'No game in progress. Start a new game with .hangman' });
+function adivinarLetra(sock, chatId, letra) {
+    if (!juegosAhorcado[chatId]) {
+        sock.sendMessage(chatId, { text: '❌ No hay un juego en curso. Inicia uno con .ahorcado' });
         return;
     }
 
-    const game = hangmanGames[chatId];
-    const { word, guessedLetters, maskedWord, maxWrongGuesses } = game;
+    const juego = juegosAhorcado[chatId];
+    const { palabra, letrasAdivinadas, palabraOculta, maxIntentos } = juego;
 
-    if (guessedLetters.includes(letter)) {
-        sock.sendMessage(chatId, { text: `You already guessed "${letter}". Try another letter.` });
+    if (letrasAdivinadas.includes(letra)) {
+        sock.sendMessage(chatId, { text: `🔄 Ya has intentado con "${letra}". Prueba otra letra.` });
         return;
     }
 
-    guessedLetters.push(letter);
+    letrasAdivinadas.push(letra);
 
-    if (word.includes(letter)) {
-        for (let i = 0; i < word.length; i++) {
-            if (word[i] === letter) {
-                maskedWord[i] = letter;
+    if (palabra.includes(letra)) {
+        for (let i = 0; i < palabra.length; i++) {
+            if (palabra[i] === letra) {
+                palabraOculta[i] = letra;
             }
         }
-        sock.sendMessage(chatId, { text: `Good guess! ${maskedWord.join(' ')}` });
+        sock.sendMessage(chatId, { text: `✅ ¡Bien hecho! ${palabraOculta.join(' ')}` });
 
-        if (!maskedWord.includes('_')) {
-            sock.sendMessage(chatId, { text: `Congratulations! You guessed the word: ${word}` });
-            delete hangmanGames[chatId];
+        if (!palabraOculta.includes('_')) {
+            sock.sendMessage(chatId, { text: `🎉 ¡Felicidades! Adivinaste la palabra: ${palabra}` });
+            delete juegosAhorcado[chatId];
         }
     } else {
-        game.wrongGuesses += 1;
-        sock.sendMessage(chatId, { text: `Wrong guess! You have ${maxWrongGuesses - game.wrongGuesses} tries left.` });
+        juego.intentosIncorrectos += 1;
+        sock.sendMessage(chatId, { text: `❌ Letra incorrecta. Te quedan ${maxIntentos - juego.intentosIncorrectos} intentos.` });
 
-        if (game.wrongGuesses >= maxWrongGuesses) {
-            sock.sendMessage(chatId, { text: `Game over! The word was: ${word}` });
-            delete hangmanGames[chatId];
+        if (juego.intentosIncorrectos >= maxIntentos) {
+            sock.sendMessage(chatId, { text: `💀 ¡Juego terminado! La palabra era: ${palabra}` });
+            delete juegosAhorcado[chatId];
         }
     }
 }
 
-module.exports = { startHangman, guessLetter };
+module.exports = { iniciarAhorcado, adivinarLetra };
