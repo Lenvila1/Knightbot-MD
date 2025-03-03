@@ -1,46 +1,65 @@
 const axios = require('axios');
 
-let triviaGames = {};
+let triviaJuegos = {};
 
-async function startTrivia(sock, chatId) {
-    if (triviaGames[chatId]) {
-        sock.sendMessage(chatId, { text: 'A trivia game is already in progress!' });
+async function iniciarTrivia(sock, chatId) {
+    if (triviaJuegos[chatId]) {
+        await sock.sendMessage(chatId, { text: '❌ *Ya hay una trivia en curso!*' });
         return;
     }
 
     try {
         const response = await axios.get('https://opentdb.com/api.php?amount=1&type=multiple');
-        const questionData = response.data.results[0];
+        const preguntaDatos = response.data.results[0];
 
-        triviaGames[chatId] = {
-            question: questionData.question,
-            correctAnswer: questionData.correct_answer,
-            options: [...questionData.incorrect_answers, questionData.correct_answer].sort(),
+        // Mezclar respuestas y almacenar la correcta
+        let opciones = [...preguntaDatos.incorrect_answers, preguntaDatos.correct_answer];
+        opciones = opciones.sort(() => Math.random() - 0.5);
+
+        triviaJuegos[chatId] = {
+            pregunta: preguntaDatos.question,
+            respuestaCorrecta: preguntaDatos.correct_answer,
+            opciones
         };
 
-        sock.sendMessage(chatId, {
-            text: `Trivia Time!\n\nQuestion: ${triviaGames[chatId].question}\nOptions:\n${triviaGames[chatId].options.join('\n')}`
-        });
+        const mensaje = `🤓 *Trivia Time!* 🧠\n\n` +
+                        `❓ *Pregunta:* ${triviaJuegos[chatId].pregunta}\n\n` +
+                        `🔹 *Opciones:* \n` +
+                        opciones.map((opcion, index) => `   ${index + 1}) ${opcion}`).join('\n') + `\n\n` +
+                        `✏️ *Responde escribiendo el número de la opción correcta!*`;
+
+        await sock.sendMessage(chatId, { text: mensaje });
+
     } catch (error) {
-        sock.sendMessage(chatId, { text: 'Error fetching trivia question. Try again later.' });
+        console.error('Error al obtener trivia:', error);
+        await sock.sendMessage(chatId, { text: '❌ *Hubo un error al obtener la trivia. Intenta de nuevo más tarde.*' });
     }
 }
 
-function answerTrivia(sock, chatId, answer) {
-    if (!triviaGames[chatId]) {
-        sock.sendMessage(chatId, { text: 'No trivia game is in progress.' });
+async function responderTrivia(sock, chatId, respuesta) {
+    if (!triviaJuegos[chatId]) {
+        await sock.sendMessage(chatId, { text: '❌ *No hay una trivia en curso.*' });
         return;
     }
 
-    const game = triviaGames[chatId];
+    const juego = triviaJuegos[chatId];
 
-    if (answer.toLowerCase() === game.correctAnswer.toLowerCase()) {
-        sock.sendMessage(chatId, { text: `Correct! The answer is ${game.correctAnswer}` });
-    } else {
-        sock.sendMessage(chatId, { text: `Wrong! The correct answer was ${game.correctAnswer}` });
+    if (!/^[1-4]$/.test(respuesta)) {
+        await sock.sendMessage(chatId, { text: '⚠️ *Responde con un número entre 1 y 4!*' });
+        return;
     }
 
-    delete triviaGames[chatId];
+    const indiceRespuesta = parseInt(respuesta) - 1;
+    const esCorrecto = juego.opciones[indiceRespuesta] === juego.respuestaCorrecta;
+
+    const mensaje = esCorrecto
+        ? `🎉 ¡Correcto! ✅ La respuesta era: *${juego.respuestaCorrecta}*`
+        : `❌ Incorrecto. La respuesta correcta era: *${juego.respuestaCorrecta}*`;
+
+    await sock.sendMessage(chatId, { text: mensaje });
+
+    delete triviaJuegos[chatId]; // Eliminar juego después de responder
 }
 
-module.exports = { startTrivia, answerTrivia };
+module.exports = { iniciarTrivia, responderTrivia };
+
