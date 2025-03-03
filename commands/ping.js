@@ -4,37 +4,27 @@ async function pingCommand(sock, chatId) {
     try {
         const start = Date.now();
         
-        // Get system info
+        // Obtener información del sistema
         const uptime = process.uptime();
         const ram = (os.totalmem() - os.freemem()) / (1024 * 1024 * 1024);
         const platform = os.platform();
         
-        // Calculate ping
-        await sock.sendMessage(chatId, { text: '📊 *Calculating...*' });
+        // Calcular ping
+        await sock.sendMessage(chatId, { text: '📊 *Calculando...*' });
         const end = Date.now();
         const ping = end - start;
 
-        const message = `*🤖 Bot Status*\n\n` +
-                       `*⚡ Response Time:* ${ping}ms\n` +
-                       `*💻 Platform:* ${platform}\n` +
+        const message = `*🤖 Estado del Bot*\n\n` +
+                       `*⚡ Tiempo de respuesta:* ${ping}ms\n` +
+                       `*💻 Plataforma:* ${platform}\n` +
                        `*🔄 Uptime:* ${formatTime(uptime)}\n` +
-                       `*💾 RAM Usage:* ${ram.toFixed(2)}GB`;
+                       `*💾 Uso de RAM:* ${ram.toFixed(2)}GB`;
 
-        await sock.sendMessage(chatId, {
-            text: message,
-            contextInfo: {
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363161513685998@newsletter',
-                    newsletterName: 'KnightBot MD',
-                    serverMessageId: -1
-                }
-            }
-        });
+        await sock.sendMessage(chatId, { text: message });
+
     } catch (error) {
-        console.error('Error in ping command:', error);
-        await sock.sendMessage(chatId, { text: 'Failed to get ping status.' });
+        console.error('Error en el comando ping:', error);
+        await sock.sendMessage(chatId, { text: '❌ No se pudo obtener el estado del bot.' });
     }
 }
 
