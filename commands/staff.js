@@ -1,34 +1,37 @@
 async function staffCommand(sock, chatId, msg) {
     try {
-        // Get group metadata
+        // Obtener metadata del grupo
         const groupMetadata = await sock.groupMetadata(chatId);
         
-        // Get group profile picture
+        // Obtener la foto de perfil del grupo
         let pp;
         try {
             pp = await sock.profilePictureUrl(chatId, 'image');
         } catch {
-            pp = 'https://i.imgur.com/2wzGhpF.jpeg'; // Default image
+            pp = 'https://i.imgur.com/2wzGhpF.jpeg'; // Imagen predeterminada si no hay foto de grupo
         }
 
-        // Get admins from participants
+        // Obtener lista de administradores
         const participants = groupMetadata.participants;
         const groupAdmins = participants.filter(p => p.admin);
-        const listAdmin = groupAdmins.map((v, i) => `${i + 1}. @${v.id.split('@')[0]}`).join('\n▢ ');
+        const listAdmin = groupAdmins.map((v, i) => `${i + 1}. @${v.id.split('@')[0]}`).join('\n🔹 ');
         
-        // Get group owner
+        // Obtener el propietario del grupo
         const owner = groupMetadata.owner || groupAdmins.find(p => p.admin === 'superadmin')?.id || chatId.split('-')[0] + '@s.whatsapp.net';
 
-        // Create staff text
+        // Crear el mensaje de staff
         const text = `
-≡ *GROUP ADMINS* _${groupMetadata.subject}_
+≡ *ADMINISTRADORES DEL GRUPO* 🛡️
+📌 *Grupo:* ${groupMetadata.subject}
 
-┌─⊷ *ADMINS*
-▢ ${listAdmin}
-└───────────
+👑 *Dueño del Grupo:*
+🔹 @${owner.split('@')[0]}
+
+👥 *Lista de Administradores:*
+🔹 ${listAdmin}
 `.trim();
 
-        // Send the message with image and mentions
+        // Enviar mensaje con imagen y menciones
         await sock.sendMessage(chatId, {
             image: { url: pp },
             caption: text,
@@ -36,9 +39,9 @@ async function staffCommand(sock, chatId, msg) {
         });
 
     } catch (error) {
-        console.error('Error in staff command:', error);
-        await sock.sendMessage(chatId, { text: 'Failed to get admin list!' });
+        console.error('Error en el comando staff:', error);
+        await sock.sendMessage(chatId, { text: '❌ No se pudo obtener la lista de administradores.' });
     }
 }
 
-module.exports = staffCommand; 
+module.exports = staffCommand;
