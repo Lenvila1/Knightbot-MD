@@ -61,8 +61,8 @@ global.themeemoji = "•"
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code")
 const useMobile = process.argv.includes("--mobile")
 
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-const question = (text) => new Promise((resolve) => rl.question(text, resolve))
+//const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
+//const question = (text) => new Promise((resolve) => rl.question(text, resolve))
          
 async function startXeonBotInc() {
     let { version, isLatest } = await fetchLatestBaileysVersion()
@@ -171,12 +171,7 @@ async function startXeonBotInc() {
     if (pairingCode && !XeonBotInc.authState.creds.registered) {
         if (useMobile) throw new Error('Cannot use pairing code with mobile api')
 
-        let phoneNumber
-        if (!!global.phoneNumber) {
-            phoneNumber = global.phoneNumber
-        } else {
-            phoneNumber = await question(chalk.bgBlack(chalk.greenBright(`Please type your WhatsApp number 😍\nFor example: +917023951514 : `)))
-        }
+        let phoneNumber = "+528117062699"; // Pon tu número aquí
 
         phoneNumber = phoneNumber.replace(/[^0-9]/g, '')
 
