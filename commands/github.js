@@ -1,33 +1,21 @@
 async function githubCommand(sock, chatId) {
-    const repoInfo = `*🤖 KnightBot MD*
+    const repoInfo = `*🤖 KnightBot MD* 
 
-*📂 GitHub Repository:*
-https://github.com/mruniquehacker/Knightbot-MD
+*📂 Repositorio en GitHub:*
+🔗 https://github.com/Levila1/Knightbot-MD
 
-*📢 Official Channel:*
-https://youtube.com/@mr_unique_hacker
-
-_Star ⭐ the repository if you like the bot!_`;
+🌟 _¡Dale una estrella ⭐ al repositorio si te gusta el bot!_`;
 
     try {
         await sock.sendMessage(chatId, {
-            text: repoInfo,
-            contextInfo: {
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363161513685998@newsletter',
-                    newsletterName: 'KnightBot MD',
-                    serverMessageId: -1
-                }
-            }
+            text: repoInfo
         });
     } catch (error) {
-        console.error('Error in github command:', error);
+        console.error('Error en el comando github:', error);
         await sock.sendMessage(chatId, { 
-            text: '❌ Error fetching repository information.' 
+            text: '❌ Error al obtener la información del repositorio.' 
         });
     }
 }
 
-module.exports = githubCommand; 
+module.exports = githubCommand;
