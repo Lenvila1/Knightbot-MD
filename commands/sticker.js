@@ -18,18 +18,7 @@ async function stickerCommand(sock, chatId, message) {
     }
 
     if (!mediaMessage) {
-        await sock.sendMessage(chatId, { 
-            text: 'Please reply to an image, video or GIF to create a sticker.',
-            contextInfo: {
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363161513685998@newsletter',
-                    newsletterName: 'KnightBot MD',
-                    serverMessageId: -1
-                }
-            }
-        });
+        await sock.sendMessage(chatId, { text: '❌ Responde a una imagen, video o GIF para crear un sticker.' });
         return;
     }
 
@@ -40,35 +29,22 @@ async function stickerCommand(sock, chatId, message) {
         });
 
         if (!mediaBuffer) {
-            await sock.sendMessage(chatId, { 
-                text: 'Failed to download media. Please try again.',
-                contextInfo: {
-                    forwardingScore: 999,
-                    isForwarded: true,
-                    forwardedNewsletterMessageInfo: {
-                        newsletterJid: '120363161513685998@newsletter',
-                        newsletterName: 'KnightBot MD',
-                        serverMessageId: -1
-                    }
-                }
-            });
+            await sock.sendMessage(chatId, { text: '❌ No se pudo descargar el archivo. Intenta de nuevo.' });
             return;
         }
 
-        // Create temp directory if it doesn't exist
-        const tmpDir = path.join(process.cwd(), 'tmp');
-        if (!fs.existsSync(tmpDir)) {
-            fs.mkdirSync(tmpDir, { recursive: true });
-        }
+        // Crear carpeta temporal si no existe
+        const tempDir = path.join(__dirname, '../temp');
+        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
-        // Generate temp file paths
-        const tempInput = path.join(tmpDir, `temp_${Date.now()}`);
-        const tempOutput = path.join(tmpDir, `sticker_${Date.now()}.webp`);
+        // Generar nombres de archivos temporales
+        const tempInput = path.join(tempDir, `temp_${Date.now()}`);
+        const tempOutput = path.join(tempDir, `sticker_${Date.now()}.webp`);
 
-        // Write media to temp file
+        // Guardar el archivo temporalmente
         fs.writeFileSync(tempInput, mediaBuffer);
 
-        // Convert to WebP using ffmpeg with optimized settings
+        // Configurar el comando de conversión con ffmpeg
         const isAnimated = mediaMessage.mimetype?.includes('gif') || mediaMessage.seconds > 0;
         
         const ffmpegCommand = isAnimated
@@ -84,14 +60,14 @@ async function stickerCommand(sock, chatId, message) {
             });
         });
 
-        // Read the WebP file
+        // Leer el archivo WebP
         const webpBuffer = fs.readFileSync(tempOutput);
 
-        // Add metadata using webpmux
+        // Agregar metadatos usando webpmux
         const img = new webp.Image();
         await img.load(webpBuffer);
 
-        // Create metadata
+        // Crear metadatos
         const json = {
             'sticker-pack-id': crypto.randomBytes(32).toString('hex'),
             'sticker-pack-name': settings.packname || 'KnightBot',
@@ -99,45 +75,32 @@ async function stickerCommand(sock, chatId, message) {
             'emojis': ['🤖']
         };
 
-        // Create exif buffer
+        // Crear buffer EXIF
         const exifAttr = Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00]);
         const jsonBuffer = Buffer.from(JSON.stringify(json), 'utf8');
         const exif = Buffer.concat([exifAttr, jsonBuffer]);
         exif.writeUIntLE(jsonBuffer.length, 14, 4);
 
-        // Set the exif data
+        // Insertar los metadatos
         img.exif = exif;
 
-        // Get the final buffer with metadata
+        // Guardar el sticker con metadatos
         const finalBuffer = await img.save(null);
 
-        // Send the sticker
-        await sock.sendMessage(chatId, { 
-            sticker: finalBuffer
-        });
+        // Enviar el sticker
+        await sock.sendMessage(chatId, { sticker: finalBuffer });
 
-        // Cleanup temp files
+        // Eliminar archivos temporales
         try {
             fs.unlinkSync(tempInput);
             fs.unlinkSync(tempOutput);
         } catch (err) {
-            console.error('Error cleaning up temp files:', err);
+            console.error('Error eliminando archivos temporales:', err);
         }
 
     } catch (error) {
-        console.error('Error in sticker command:', error);
-        await sock.sendMessage(chatId, { 
-            text: 'Failed to create sticker! Try again later.',
-            contextInfo: {
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363161513685998@newsletter',
-                    newsletterName: 'KnightBot MD',
-                    serverMessageId: -1
-                }
-            }
-        });
+        console.error('Error en el comando de sticker:', error);
+        await sock.sendMessage(chatId, { text: '❌ Error al crear el sticker. Intenta de nuevo más tarde.' });
     }
 }
 
