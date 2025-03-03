@@ -110,16 +110,16 @@ async function startXeonBotInc() {
                 console.error("Error in handleMessages:", err)
                 // Only try to send error message if we have a valid chatId
                 if (mek.key && mek.key.remoteJid) {
-                    await XeonBotInc.sendMessage(mek.key.remoteJid, { 
-                        text: '❌ An error occurred while processing your message.',
-                        contextInfo: {
-                            forwardingScore: 999,
-                            isForwarded: true,
-                            forwardedNewsletterMessageInfo: {
-                                newsletterJid: '120363161513685998@newsletter',
-                                newsletterName: 'KnightBot MD',
-                                serverMessageId: -1
-                            }
+    await XeonBotInc.sendMessage(mek.key.remoteJid, { 
+        text: '? An error occurred while processing your message.',
+        contextInfo: {
+            forwardingScore: 999,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: '0029VajM7fxEAKWOOIhQbR0K@newsletter', // ?? Aquí va tu canal
+                newsletterName: 'Mi Canal Oficial',
+                serverMessageId: -1
+            }
                         }
                     }).catch(console.error);
                 }
@@ -171,7 +171,7 @@ async function startXeonBotInc() {
     if (pairingCode && !XeonBotInc.authState.creds.registered) {
         if (useMobile) throw new Error('Cannot use pairing code with mobile api')
 
-        let phoneNumber = "+528117062699"; // Pon tu número aquí
+        let phoneNumber = "+528117062699"; 
 
         phoneNumber = phoneNumber.replace(/[^0-9]/g, '')
 
@@ -191,20 +191,21 @@ async function startXeonBotInc() {
             console.log(chalk.yellow(`🌿Connected to => ` + JSON.stringify(XeonBotInc.user, null, 2)))
             
             // Send message to bot's own number
-            const botNumber = XeonBotInc.user.id.split(':')[0] + '@s.whatsapp.net';
-            await XeonBotInc.sendMessage(botNumber, { 
-                text: `🤖 Bot Connected Successfully!\n\n⏰ Time: ${new Date().toLocaleString()}\n✅ Status: Online and Ready!
-                \n Give a Star ⭐ to our bot:\n https://github.com/mruniquehacker/KnightBot-MD\n ✅Make sure to join below channel`,
-                contextInfo: {
-                    forwardingScore: 999,
-                    isForwarded: true,
-                    forwardedNewsletterMessageInfo: {
-                        newsletterJid: '120363161513685998@newsletter',
-                        newsletterName: 'KnightBot MD',
-                        serverMessageId: -1
-                    }
-                }
-            });
+const botNumber = XeonBotInc.user.id.split(':')[0] + '@s.whatsapp.net';
+await XeonBotInc.sendMessage(botNumber, { 
+    text: `🤖 Bot Connected Successfully!\n\n⏰ Time: ${new Date().toLocaleString()}\n✅ Status: Online and Ready!
+    \n Give a Star ⭐ to our bot:\n https://github.com/Lenvila1/KnightBot-MD\n ✅Make sure to join below channel`,
+    contextInfo: {
+        forwardingScore: 999,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+            newsletterJid: '0029VajM7fxEAKWOOIhQbR0K@newsletter', 
+            newsletterName: 'Mi Canal Oficial',
+            serverMessageId: -1
+        }
+    }
+});
+
 
             await delay(1999)
             console.log(chalk.yellow(`\n\n                  ${chalk.bold.blue(`[ ${global.botname || 'KNIGHT BOT'} ]`)}\n\n`))
