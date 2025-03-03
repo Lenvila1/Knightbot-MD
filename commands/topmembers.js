@@ -3,8 +3,7 @@ const path = require('path');
 
 const dataFilePath = path.join(__dirname, '..', 'data', 'messageCount.json');
 
-// Función para cargar los contadores de mensajes desde un archivo JSON
-function cargarConteoMensajes() {
+function loadMessageCounts() {
     if (fs.existsSync(dataFilePath)) {
         const data = fs.readFileSync(dataFilePath);
         return JSON.parse(data);
@@ -12,58 +11,51 @@ function cargarConteoMensajes() {
     return {};
 }
 
-// Función para guardar los contadores de mensajes en un archivo JSON
-function guardarConteoMensajes(conteoMensajes) {
-    fs.writeFileSync(dataFilePath, JSON.stringify(conteoMensajes, null, 2));
+function saveMessageCounts(messageCounts) {
+    fs.writeFileSync(dataFilePath, JSON.stringify(messageCounts, null, 2));
 }
 
-// Función para incrementar el conteo de mensajes de un usuario en un grupo
-function incrementarConteoMensajes(groupId, userId) {
-    const conteoMensajes = cargarConteoMensajes();
+function incrementMessageCount(groupId, userId) {
+    const messageCounts = loadMessageCounts();
 
-    if (!conteoMensajes[groupId]) {
-        conteoMensajes[groupId] = {};
+    if (!messageCounts[groupId]) {
+        messageCounts[groupId] = {};
     }
 
-    if (!conteoMensajes[groupId][userId]) {
-        conteoMensajes[groupId][userId] = 0;
+    if (!messageCounts[groupId][userId]) {
+        messageCounts[groupId][userId] = 0;
     }
 
-    conteoMensajes[groupId][userId] += 1;
-    guardarConteoMensajes(conteoMensajes);
+    messageCounts[groupId][userId] += 1;
+
+    saveMessageCounts(messageCounts);
 }
 
-// Función para mostrar los 5 miembros más activos del grupo
-async function topMiembros(sock, chatId, isGroup) {
+function topMembers(sock, chatId, isGroup) {
     if (!isGroup) {
-        await sock.sendMessage(chatId, { text: '❌ *Este comando solo está disponible en grupos.*' });
+        sock.sendMessage(chatId, { text: 'This command is only available in group chats.' });
         return;
     }
 
-    const conteoMensajes = cargarConteoMensajes();
-    const conteoGrupo = conteoMensajes[chatId] || {};
+    const messageCounts = loadMessageCounts();
+    const groupCounts = messageCounts[chatId] || {};
 
-    // Ordenar los miembros según el número de mensajes
-    const miembrosOrdenados = Object.entries(conteoGrupo)
+    const sortedMembers = Object.entries(groupCounts)
         .sort(([, a], [, b]) => b - a)
-        .slice(0, 5); // Obtener los 5 miembros más activos
+        .slice(0, 5); // Get top 5 members
 
-    if (miembrosOrdenados.length === 0) {
-        await sock.sendMessage(chatId, { text: '📊 *Aún no hay actividad registrada en el grupo.*' });
+    if (sortedMembers.length === 0) {
+        sock.sendMessage(chatId, { text: 'No message activity recorded yet.' });
         return;
     }
 
-    // Crear el mensaje de ranking con formato atractivo
-    let mensaje = `🏆 *Top 5 Miembros más activos del grupo*\n\n`;
-    miembrosOrdenados.forEach(([userId, count], index) => {
-        const medalla = ['🥇', '🥈', '🥉', '🎖️', '🏅'][index] || '🔹';
-        mensaje += `${medalla} *@${userId.split('@')[0]}* - *${count} mensajes*\n`;
+    let message = '🏆 Top Members Based on Message Count:\n\n';
+    sortedMembers.forEach(([userId, count], index) => {
+        message += `${index + 1}. @${userId.split('@')[0]} - ${count} messages\n`;
     });
 
-    await sock.sendMessage(chatId, { 
-        text: mensaje, 
-        mentions: miembrosOrdenados.map(([userId]) => userId) 
-    });
+    sock.sendMessage(chatId, { text: message, mentions: sortedMembers.map(([userId]) => userId) });
 }
 
-module.exports = { incrementarConteoMensajes, topMiembros };
+module.exports = { incrementMessageCount, topMembers };
+
