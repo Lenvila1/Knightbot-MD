@@ -5,27 +5,27 @@ const path = require('path');
 
 async function emojimixCommand(sock, chatId, msg) {
     try {
-        // Get the text after command
+        // Obtener el texto después del comando
         const text = msg.message?.conversation?.trim() || 
                     msg.message?.extendedTextMessage?.text?.trim() || '';
         
         const args = text.split(' ').slice(1);
         
         if (!args[0]) {
-            await sock.sendMessage(chatId, { text: '🎴 Example: .emojimix 😎+🥰' });
+            await sock.sendMessage(chatId, { text: '🎴 Ejemplo: .emojimix 😎+🥰' });
             return;
         }
 
         if (!text.includes('+')) {
             await sock.sendMessage(chatId, { 
-                text: '✳️ Separate the emoji with a *+* sign\n\n📌 Example: \n*.emojimix* 😎+🥰' 
+                text: '✳️ Separa los emojis con un signo *+*\n\n📌 Ejemplo: \n*.emojimix* 😎+🥰' 
             });
             return;
         }
 
         let [emoji1, emoji2] = args[0].split('+').map(e => e.trim());
 
-        // Using Tenor API endpoint
+        // Usando la API de Tenor
         const url = `https://tenor.googleapis.com/v2/featured?key=AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ&contentfilter=high&media_filter=png_transparent&component=proactive&collection=emoji_kitchen_v5&q=${encodeURIComponent(emoji1)}_${encodeURIComponent(emoji2)}`;
 
         const response = await fetch(url);
@@ -33,36 +33,36 @@ async function emojimixCommand(sock, chatId, msg) {
 
         if (!data.results || data.results.length === 0) {
             await sock.sendMessage(chatId, { 
-                text: '❌ These emojis cannot be mixed! Try different ones.' 
+                text: '❌ Estos emojis no se pueden combinar. ¡Prueba con otros!' 
             });
             return;
         }
 
-        // Get the first result URL
+        // Obtener la primera imagen resultante
         const imageUrl = data.results[0].url;
 
-        // Create temp directory if it doesn't exist
+        // Crear directorio temporal si no existe
         const tmpDir = path.join(process.cwd(), 'tmp');
         if (!fs.existsSync(tmpDir)) {
             fs.mkdirSync(tmpDir, { recursive: true });
         }
 
-        // Generate random filenames with escaped paths
+        // Generar nombres de archivo aleatorios con rutas seguras
         const tempFile = path.join(tmpDir, `temp_${Date.now()}.png`).replace(/\\/g, '/');
         const outputFile = path.join(tmpDir, `sticker_${Date.now()}.webp`).replace(/\\/g, '/');
 
-        // Download and save the image
+        // Descargar y guardar la imagen
         const imageResponse = await fetch(imageUrl);
         const buffer = await imageResponse.buffer();
         fs.writeFileSync(tempFile, buffer);
 
-        // Convert to WebP using ffmpeg with proper path escaping
+        // Convertir a WebP usando ffmpeg con ruta segura
         const ffmpegCommand = `ffmpeg -i "${tempFile}" -vf "scale=512:512:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000" "${outputFile}"`;
         
         await new Promise((resolve, reject) => {
             exec(ffmpegCommand, (error) => {
                 if (error) {
-                    console.error('FFmpeg error:', error);
+                    console.error('Error en FFmpeg:', error);
                     reject(error);
                 } else {
                     resolve();
@@ -70,33 +70,33 @@ async function emojimixCommand(sock, chatId, msg) {
             });
         });
 
-        // Check if output file exists
+        // Verificar si el archivo WebP se creó correctamente
         if (!fs.existsSync(outputFile)) {
-            throw new Error('Failed to create sticker file');
+            throw new Error('No se pudo crear el sticker.');
         }
 
-        // Read the WebP file
+        // Leer el archivo WebP
         const stickerBuffer = fs.readFileSync(outputFile);
 
-        // Send the sticker
+        // Enviar el sticker
         await sock.sendMessage(chatId, { 
             sticker: stickerBuffer 
         }, { quoted: msg });
 
-        // Cleanup temp files
+        // Limpiar archivos temporales
         try {
             fs.unlinkSync(tempFile);
             fs.unlinkSync(outputFile);
         } catch (err) {
-            console.error('Error cleaning up temp files:', err);
+            console.error('Error al limpiar archivos temporales:', err);
         }
 
     } catch (error) {
-        console.error('Error in emojimix command:', error);
+        console.error('Error en el comando emojimix:', error);
         await sock.sendMessage(chatId, { 
-            text: '❌ Failed to mix emojis! Make sure you\'re using valid emojis.\n\nExample: .emojimix 😎+🥰' 
+            text: '❌ ¡No se pudo mezclar los emojis! Asegúrate de usar emojis válidos.\n\nEjemplo: .emojimix 😎+🥰' 
         });
     }
 }
 
-module.exports = emojimixCommand; 
+module.exports = emojimixCommand;
