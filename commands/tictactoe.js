@@ -1,205 +1,192 @@
 const TicTacToe = require('../lib/tictactoe');
 
-// Store games globally
-const games = {};
+// Almacenar juegos en un objeto global
+const juegos = {};
 
 async function tictactoeCommand(sock, chatId, senderId, text) {
     try {
-        // Check if player is already in a game
-        if (Object.values(games).find(room => 
+        // Comprobar si el jugador ya está en un juego
+        if (Object.values(juegos).find(room => 
             room.id.startsWith('tictactoe') && 
             [room.game.playerX, room.game.playerO].includes(senderId)
         )) {
             await sock.sendMessage(chatId, { 
-                text: '❌ You are still in a game. Type *surrender* to quit.' 
+                text: '❌ *Ya estás en un juego.* Escribe *rendirse* para salir.' 
             });
             return;
         }
 
-        // Look for existing room
-        let room = Object.values(games).find(room => 
-            room.state === 'WAITING' && 
-            (text ? room.name === text : true)
+        // Buscar una sala de espera
+        let sala = Object.values(juegos).find(room => 
+            room.estado === 'ESPERANDO' && 
+            (text ? room.nombre === text : true)
         );
 
-        if (room) {
-            // Join existing room
-            room.o = chatId;
-            room.game.playerO = senderId;
-            room.state = 'PLAYING';
+        if (sala) {
+            // Unirse a una sala existente
+            sala.o = chatId;
+            sala.game.playerO = senderId;
+            sala.estado = 'JUGANDO';
 
-            const arr = room.game.render().map(v => ({
-                'X': '❎',
-                'O': '⭕',
-                '1': '1️⃣',
-                '2': '2️⃣',
-                '3': '3️⃣',
-                '4': '4️⃣',
-                '5': '5️⃣',
-                '6': '6️⃣',
-                '7': '7️⃣',
-                '8': '8️⃣',
-                '9': '9️⃣',
-            }[v]));
+            const tablero = formatearTablero(sala.game.render());
 
-            const str = `
-🎮 *TicTacToe Game Started!*
+            const mensaje = `
+🎮 *¡Juego de Tic-Tac-Toe iniciado!*
 
-Waiting for @${room.game.currentTurn.split('@')[0]} to play...
+🔄 Turno de @${sala.game.currentTurn.split('@')[0]}
 
-${arr.slice(0, 3).join('')}
-${arr.slice(3, 6).join('')}
-${arr.slice(6).join('')}
+${tablero}
 
-▢ *Room ID:* ${room.id}
-▢ *Rules:*
-• Make 3 rows of symbols vertically, horizontally or diagonally to win
-• Type a number (1-9) to place your symbol
-• Type *surrender* to give up
+📌 *Reglas:*
+• Forma una fila, columna o diagonal con tu símbolo para ganar.
+• Escribe un número (1-9) para colocar tu símbolo.
+• Escribe *rendirse* para abandonar el juego.
 `;
 
-            // Send message only once to the group
+            // Enviar mensaje con menciones
             await sock.sendMessage(chatId, { 
-                text: str,
-                mentions: [room.game.currentTurn, room.game.playerX, room.game.playerO]
+                text: mensaje,
+                mentions: [sala.game.currentTurn, sala.game.playerX, sala.game.playerO]
             });
 
         } else {
-            // Create new room
-            room = {
-                id: 'tictactoe-' + (+new Date),
+            // Crear una nueva sala de juego
+            sala = {
+                id: 'tictactoe-' + Date.now(),
                 x: chatId,
                 o: '',
                 game: new TicTacToe(senderId, 'o'),
-                state: 'WAITING'
+                estado: 'ESPERANDO'
             };
 
-            if (text) room.name = text;
+            if (text) sala.nombre = text;
 
             await sock.sendMessage(chatId, { 
-                text: `⏳ *Waiting for opponent*\nType *.ttt ${text || ''}* to join!`
+                text: `⏳ *Esperando un oponente.*\nEscribe *.ttt ${text || ''}* para unirte.`
             });
 
-            games[room.id] = room;
+            juegos[sala.id] = sala;
         }
 
     } catch (error) {
-        console.error('Error in tictactoe command:', error);
+        console.error('Error en el comando Tic-Tac-Toe:', error);
         await sock.sendMessage(chatId, { 
-            text: '❌ Error starting game. Please try again.' 
+            text: '❌ *Error al iniciar el juego.* Inténtalo de nuevo.' 
         });
     }
 }
 
 async function handleTicTacToeMove(sock, chatId, senderId, text) {
     try {
-        // Find player's game
-        const room = Object.values(games).find(room => 
+        // Buscar el juego del jugador
+        const sala = Object.values(juegos).find(room => 
             room.id.startsWith('tictactoe') && 
             [room.game.playerX, room.game.playerO].includes(senderId) && 
-            room.state === 'PLAYING'
+            room.estado === 'JUGANDO'
         );
 
-        if (!room) return;
+        if (!sala) return;
 
-        const isSurrender = /^(surrender|give up)$/i.test(text);
+        const esRendicion = /^(rendirse|abandonar)$/i.test(text);
         
-        if (!isSurrender && !/^[1-9]$/.test(text)) return;
+        if (!esRendicion && !/^[1-9]$/.test(text)) return;
 
-        if (senderId !== room.game.currentTurn) {
-            if (!isSurrender) {
-                await sock.sendMessage(chatId, { 
-                    text: '❌ Not your turn!' 
-                });
+        if (senderId !== sala.game.currentTurn) {
+            if (!esRendicion) {
+                await sock.sendMessage(chatId, { text: '❌ *No es tu turno.*' });
                 return;
             }
         }
 
-        let ok = isSurrender ? true : room.game.turn(
-            senderId === room.game.playerO,
+        let jugadaValida = esRendicion ? true : sala.game.turn(
+            senderId === sala.game.playerO,
             parseInt(text) - 1
         );
 
-        if (!ok) {
-            await sock.sendMessage(chatId, { 
-                text: '❌ Invalid move! That position is already taken.' 
-            });
+        if (!jugadaValida) {
+            await sock.sendMessage(chatId, { text: '❌ *Movimiento inválido.* Esa casilla ya está ocupada.' });
             return;
         }
 
-        let winner = room.game.winner;
-        let isTie = room.game.turns === 9;
+        let ganador = sala.game.winner;
+        let esEmpate = sala.game.turns === 9;
 
-        const arr = room.game.render().map(v => ({
-            'X': '❎',
-            'O': '⭕',
-            '1': '1️⃣',
-            '2': '2️⃣',
-            '3': '3️⃣',
-            '4': '4️⃣',
-            '5': '5️⃣',
-            '6': '6️⃣',
-            '7': '7️⃣',
-            '8': '8️⃣',
-            '9': '9️⃣',
-        }[v]));
+        const tablero = formatearTablero(sala.game.render());
 
-        if (isSurrender) {
-            room.game._currentTurn = senderId === room.game.playerX;
-            winner = room.game.currentTurn;
+        if (esRendicion) {
+            sala.game._currentTurn = senderId === sala.game.playerX;
+            ganador = sala.game.currentTurn;
         }
 
-        let gameStatus;
-        if (winner) {
-            gameStatus = isSurrender 
-                ? `🏳️ @${winner.split('@')[0]} wins by surrender!`
-                : `🎉 @${winner.split('@')[0]} wins the game!`;
-        } else if (isTie) {
-            gameStatus = `🤝 Game ended in a draw!`;
+        let estadoJuego;
+        if (ganador) {
+            estadoJuego = esRendicion 
+                ? `🏳️ @${ganador.split('@')[0]} *gana por rendición!*`
+                : `🎉 @${ganador.split('@')[0]} *gana la partida!*`;
+        } else if (esEmpate) {
+            estadoJuego = `🤝 *¡Empate!* No hay ganador.`;
         } else {
-            gameStatus = `🎲 Turn: @${room.game.currentTurn.split('@')[0]} (${senderId === room.game.playerX ? '❎' : '⭕'})`;
+            estadoJuego = `🎲 *Turno de:* @${sala.game.currentTurn.split('@')[0]}`;
         }
 
-        const str = `
-🎮 *TicTacToe Game*
+        const mensaje = `
+🎮 *Tic-Tac-Toe*
 
-${gameStatus}
+${estadoJuego}
 
-${arr.slice(0, 3).join('')}
-${arr.slice(3, 6).join('')}
-${arr.slice(6).join('')}
+${tablero}
 
-▢ Player ❎: @${room.game.playerX.split('@')[0]}
-▢ Player ⭕: @${room.game.playerO.split('@')[0]}
+👤 *Jugador ❎:* @${sala.game.playerX.split('@')[0]}
+👤 *Jugador ⭕:* @${sala.game.playerO.split('@')[0]}
 
-${!winner && !isTie ? '• Type a number (1-9) to make your move\n• Type *surrender* to give up' : ''}
+${!ganador && !esEmpate ? '• Escribe un número (1-9) para jugar.\n• Escribe *rendirse* para abandonar el juego.' : ''}
 `;
 
-        const mentions = [
-            room.game.playerX, 
-            room.game.playerO,
-            ...(winner ? [winner] : [room.game.currentTurn])
+        const menciones = [
+            sala.game.playerX, 
+            sala.game.playerO,
+            ...(ganador ? [ganador] : [sala.game.currentTurn])
         ];
 
-        await sock.sendMessage(room.x, { 
-            text: str,
-            mentions: mentions
-        });
+        await sock.sendMessage(sala.x, { text: mensaje, mentions: menciones });
 
-        if (room.x !== room.o) {
-            await sock.sendMessage(room.o, { 
-                text: str,
-                mentions: mentions
-            });
+        if (sala.x !== sala.o) {
+            await sock.sendMessage(sala.o, { text: mensaje, mentions: menciones });
         }
 
-        if (winner || isTie) {
-            delete games[room.id];
+        if (ganador || esEmpate) {
+            delete juegos[sala.id];
         }
 
     } catch (error) {
-        console.error('Error in tictactoe move:', error);
+        console.error('Error en el movimiento de Tic-Tac-Toe:', error);
     }
+}
+
+// Función para formatear el tablero con emojis
+function formatearTablero(tablero) {
+    return `
+${tablero.slice(0, 3).map(celda => traducirSimbolo(celda)).join('')}
+${tablero.slice(3, 6).map(celda => traducirSimbolo(celda)).join('')}
+${tablero.slice(6).map(celda => traducirSimbolo(celda)).join('')}
+`;
+}
+
+// Función para traducir los símbolos del tablero a emojis
+function traducirSimbolo(simbolo) {
+    return {
+        'X': '❎',
+        'O': '⭕',
+        '1': '1️⃣',
+        '2': '2️⃣',
+        '3': '3️⃣',
+        '4': '4️⃣',
+        '5': '5️⃣',
+        '6': '6️⃣',
+        '7': '7️⃣',
+        '8': '8️⃣',
+        '9': '9️⃣',
+    }[simbolo];
 }
 
 module.exports = {
