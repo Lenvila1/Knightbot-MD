@@ -3,27 +3,27 @@ const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const path = require('path');
 
-async function downloadMediaMessage(message, mediaType) {
-    const stream = await downloadContentFromMessage(message, mediaType);
+async function descargarMensajeMedia(message, tipoMedia) {
+    const stream = await downloadContentFromMessage(message, tipoMedia);
     let buffer = Buffer.from([]);
     for await (const chunk of stream) {
         buffer = Buffer.concat([buffer, chunk]);
     }
-    const filePath = path.join(__dirname, '../temp/', `${Date.now()}.${mediaType}`);
-    fs.writeFileSync(filePath, buffer);
-    return filePath;
+    const rutaArchivo = path.join(__dirname, '../temp/', `${Date.now()}.${tipoMedia}`);
+    fs.writeFileSync(rutaArchivo, buffer);
+    return rutaArchivo;
 }
 
 async function tagCommand(sock, chatId, senderId, messageText, replyMessage) {
     const { isSenderAdmin, isBotAdmin } = await isAdmin(sock, chatId, senderId);
 
     if (!isBotAdmin) {
-        await sock.sendMessage(chatId, { text: 'Please make the bot an admin first.' });
+        await sock.sendMessage(chatId, { text: '❌ *Debo ser administrador para etiquetar a todos!*' });
         return;
     }
 
     if (!isSenderAdmin) {
-        const stickerPath = './assets/sticktag.webp';  // Path to your sticker
+        const stickerPath = './assets/sticktag.webp';  // Ruta al sticker personalizado
         if (fs.existsSync(stickerPath)) {
             const stickerBuffer = fs.readFileSync(stickerPath);
             await sock.sendMessage(chatId, { sticker: stickerBuffer });
@@ -31,56 +31,59 @@ async function tagCommand(sock, chatId, senderId, messageText, replyMessage) {
         return;
     }
 
+    // Obtener información del grupo
     const groupMetadata = await sock.groupMetadata(chatId);
-    const participants = groupMetadata.participants;
-    const mentionedJidList = participants.map(p => p.id);
+    const participantes = groupMetadata.participants;
+    const listaEtiquetas = participantes.map(p => p.id);
 
+    // Si es una respuesta a un mensaje
     if (replyMessage) {
-        let messageContent = {};
+        let contenidoMensaje = {};
 
-        // Handle image messages
+        // Si es una imagen
         if (replyMessage.imageMessage) {
-            const filePath = await downloadMediaMessage(replyMessage.imageMessage, 'image');
-            messageContent = {
-                image: { url: filePath },
+            const rutaArchivo = await descargarMensajeMedia(replyMessage.imageMessage, 'image');
+            contenidoMensaje = {
+                image: { url: rutaArchivo },
                 caption: messageText || replyMessage.imageMessage.caption || '',
-                mentions: mentionedJidList
+                mentions: listaEtiquetas
             };
         }
-        // Handle video messages
+        // Si es un video
         else if (replyMessage.videoMessage) {
-            const filePath = await downloadMediaMessage(replyMessage.videoMessage, 'video');
-            messageContent = {
-                video: { url: filePath },
+            const rutaArchivo = await descargarMensajeMedia(replyMessage.videoMessage, 'video');
+            contenidoMensaje = {
+                video: { url: rutaArchivo },
                 caption: messageText || replyMessage.videoMessage.caption || '',
-                mentions: mentionedJidList
+                mentions: listaEtiquetas
             };
         }
-        // Handle text messages
+        // Si es un mensaje de texto
         else if (replyMessage.conversation || replyMessage.extendedTextMessage) {
-            messageContent = {
+            contenidoMensaje = {
                 text: replyMessage.conversation || replyMessage.extendedTextMessage.text,
-                mentions: mentionedJidList
+                mentions: listaEtiquetas
             };
         }
-        // Handle document messages
+        // Si es un documento
         else if (replyMessage.documentMessage) {
-            const filePath = await downloadMediaMessage(replyMessage.documentMessage, 'document');
-            messageContent = {
-                document: { url: filePath },
+            const rutaArchivo = await descargarMensajeMedia(replyMessage.documentMessage, 'document');
+            contenidoMensaje = {
+                document: { url: rutaArchivo },
                 fileName: replyMessage.documentMessage.fileName,
                 caption: messageText || '',
-                mentions: mentionedJidList
+                mentions: listaEtiquetas
             };
         }
 
-        if (Object.keys(messageContent).length > 0) {
-            await sock.sendMessage(chatId, messageContent);
+        if (Object.keys(contenidoMensaje).length > 0) {
+            await sock.sendMessage(chatId, contenidoMensaje);
         }
     } else {
+        // Enviar solo un mensaje etiquetando a todos
         await sock.sendMessage(chatId, {
-            text: messageText || "Tagged message",
-            mentions: mentionedJidList
+            text: messageText || "🔔 *Etiquetando a todos...*",
+            mentions: listaEtiquetas
         });
     }
 }
