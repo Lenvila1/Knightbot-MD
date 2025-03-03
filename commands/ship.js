@@ -1,33 +1,33 @@
 async function shipCommand(sock, chatId, msg, groupMetadata) {
     try {
-        // Get all participants from the group
+        // Obtener todos los participantes del grupo
         const participants = await sock.groupMetadata(chatId);
         const ps = participants.participants.map(v => v.id);
         
-        // Get two random participants
+        // Obtener dos participantes aleatorios
         let firstUser, secondUser;
         
-        // Select first random user
+        // Seleccionar el primer usuario al azar
         firstUser = ps[Math.floor(Math.random() * ps.length)];
         
-        // Select second random user (different from first)
+        // Seleccionar el segundo usuario al azar (que no sea el mismo que el primero)
         do {
             secondUser = ps[Math.floor(Math.random() * ps.length)];
         } while (secondUser === firstUser);
 
-        // Format the mentions
+        // Formatear las menciones
         const formatMention = id => '@' + id.split('@')[0];
 
-        // Create and send the ship message
+        // Crear y enviar el mensaje de shippeo
         await sock.sendMessage(chatId, {
-            text: `${formatMention(firstUser)} ❤️ ${formatMention(secondUser)}\nCongratulations 💖🍻`,
+            text: `❤️ ¡Nueva pareja formada! ❤️\n\n${formatMention(firstUser)} 💞 ${formatMention(secondUser)}\n🎉 ¡Felicidades! 💖🥂`,
             mentions: [firstUser, secondUser]
         });
 
     } catch (error) {
-        console.error('Error in ship command:', error);
-        await sock.sendMessage(chatId, { text: '❌ Failed to ship! Make sure this is a group.' });
+        console.error('Error en el comando ship:', error);
+        await sock.sendMessage(chatId, { text: '❌ No se pudo hacer el shippeo. Asegúrate de que esto es un grupo.' });
     }
 }
 
-module.exports = shipCommand; 
+module.exports = shipCommand;
