@@ -9,6 +9,7 @@
  * - Baileys Library by @adiwajshing
  * - Pair Code implementation inspired by TechGod143 & DGXEON
  */
+
 require('./settings')
 const { Boom } = require('@hapi/boom')
 const fs = require('fs')
@@ -37,11 +38,11 @@ const {
     makeCacheableSignalKeyStore,
     delay
 } = require("@whiskeysockets/baileys")
+
 const NodeCache = require("node-cache")
 const pino = require("pino")
-const readline = require("readline")
+
 const { parsePhoneNumber } = require("libphonenumber-js")
-const { PHONENUMBER_MCC } = require('@whiskeysockets/baileys/lib/Utils/generics')
 const { rmSync, existsSync } = require('fs')
 const { join } = require('path')
 
@@ -52,20 +53,16 @@ const store = makeInMemoryStore({
     })
 })
 
-let phoneNumber = "911234567890"
+let phoneNumber = "+528117062699" // ⚠️ Asegúrate de que este número es el correcto
 let owner = JSON.parse(fs.readFileSync('./database/owner.json'))
 
 global.botname = "KNIGHT BOT"
 global.themeemoji = "•"
 
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code")
-const useMobile = process.argv.includes("--mobile")
 
-//const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-//const question = (text) => new Promise((resolve) => rl.question(text, resolve))
-         
 async function startXeonBotInc() {
-    let { version, isLatest } = await fetchLatestBaileysVersion()
+    let { version } = await fetchLatestBaileysVersion()
     const { state, saveCreds } = await useMultiFileAuthState(`./session`)
     const msgRetryCounterCache = new NodeCache()
 
@@ -108,11 +105,9 @@ async function startXeonBotInc() {
                 await handleMessages(XeonBotInc, chatUpdate, true)
             } catch (err) {
                 console.error("Error in handleMessages:", err)
-                // Only try to send error message if we have a valid chatId
                 if (mek.key && mek.key.remoteJid) {
-    await XeonBotInc.sendMessage(mek.key.remoteJid, { 
-        text: '? An error occurred while processing your message.',
-                        }
+                    await XeonBotInc.sendMessage(mek.key.remoteJid, { 
+                        text: '❌ An error occurred while processing your message.'
                     }).catch(console.error);
                 }
             }
@@ -121,53 +116,9 @@ async function startXeonBotInc() {
         }
     })
 
-    // Add these event handlers for better functionality
-    XeonBotInc.decodeJid = (jid) => {
-        if (!jid) return jid
-        if (/:\d+@/gi.test(jid)) {
-            let decode = jidDecode(jid) || {}
-            return decode.user && decode.server && decode.user + '@' + decode.server || jid
-        } else return jid
-    }
-
-    XeonBotInc.ev.on('contacts.update', update => {
-        for (let contact of update) {
-            let id = XeonBotInc.decodeJid(contact.id)
-            if (store && store.contacts) store.contacts[id] = { id, name: contact.notify }
-        }
-    })
-
-    XeonBotInc.getName = (jid, withoutContact = false) => {
-        id = XeonBotInc.decodeJid(jid)
-        withoutContact = XeonBotInc.withoutContact || withoutContact 
-        let v
-        if (id.endsWith("@g.us")) return new Promise(async (resolve) => {
-            v = store.contacts[id] || {}
-            if (!(v.name || v.subject)) v = XeonBotInc.groupMetadata(id) || {}
-            resolve(v.name || v.subject || PhoneNumber('+' + id.replace('@s.whatsapp.net', '')).getNumber('international'))
-        })
-        else v = id === '0@s.whatsapp.net' ? {
-            id,
-            name: 'WhatsApp'
-        } : id === XeonBotInc.decodeJid(XeonBotInc.user.id) ?
-            XeonBotInc.user :
-            (store.contacts[id] || {})
-        return (withoutContact ? '' : v.name) || v.subject || v.verifiedName || PhoneNumber('+' + jid.replace('@s.whatsapp.net', '')).getNumber('international')
-    }
-
     XeonBotInc.public = true
 
-    XeonBotInc.serializeM = (m) => smsg(XeonBotInc, m, store)
-
-    // Handle pairing code
     if (pairingCode && !XeonBotInc.authState.creds.registered) {
-        if (useMobile) throw new Error('Cannot use pairing code with mobile api')
-
-        let phoneNumber = "+528117062699"; 
-
-        phoneNumber = phoneNumber.replace(/[^0-9]/g, '')
-
-        // Request pairing code
         setTimeout(async () => {
             let code = await XeonBotInc.requestPairingCode(phoneNumber)
             code = code?.match(/.{1,4}/g)?.join("-") || code
@@ -175,68 +126,28 @@ async function startXeonBotInc() {
         }, 3000)
     }
 
-    // Connection handling
     XeonBotInc.ev.on('connection.update', async (s) => {
         const { connection, lastDisconnect } = s
         if (connection == "open") {
-            console.log(chalk.magenta(` `))
-            console.log(chalk.yellow(`🌿Connected to => ` + JSON.stringify(XeonBotInc.user, null, 2)))
+            console.log(chalk.yellow(`🌿 Connected to => ` + JSON.stringify(XeonBotInc.user, null, 2)))
             
-            // Send message to bot's own number
-const botNumber = XeonBotInc.user.id.split(':')[0] + '@s.whatsapp.net';
-await XeonBotInc.sendMessage(botNumber, { 
-    text: `🤖 Bot Connected Successfully!\n\n⏰ Time: ${new Date().toLocaleString()}\n✅ Status: Online and Ready!
-    \n Give a Star ⭐ to our bot:\n https://github.com/Lenvila1/KnightBot-MD\n ✅Make sure to join below channel`,
-});
+            // ✅ Eliminamos el canal de WhatsApp
+            const botNumber = XeonBotInc.user.id.split(':')[0] + '@s.whatsapp.net';
+            await XeonBotInc.sendMessage(botNumber, { 
+                text: `🤖 Bot Connected Successfully!\n\n⏰ Time: ${new Date().toLocaleString()}\n✅ Status: Online and Ready!`
+            });
 
-
-            await delay(1999)
-            console.log(chalk.yellow(`\n\n                  ${chalk.bold.blue(`[ ${global.botname || 'KNIGHT BOT'} ]`)}\n\n`))
-            console.log(chalk.cyan(`< ================================================== >`))
-            console.log(chalk.magenta(`\n${global.themeemoji || '•'} YT CHANNEL: MR UNIQUE HACKER`))
-            console.log(chalk.magenta(`${global.themeemoji || '•'} GITHUB: mrunqiuehacker`))
-            console.log(chalk.magenta(`${global.themeemoji || '•'} WA NUMBER: ${owner}`))
-            console.log(chalk.magenta(`${global.themeemoji || '•'} CREDIT: MR UNIQUE HACKER`))
-            console.log(chalk.green(`${global.themeemoji || '•'} 🤖 Bot Connected Successfully! ✅`))
+            console.log(chalk.green(`🤖 Bot Connected Successfully! ✅`))
         }
-        if (
-            connection === "close" &&
-            lastDisconnect &&
-            lastDisconnect.error &&
-            lastDisconnect.error.output.statusCode != 401
-        ) {
+        if (connection === "close" && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
             startXeonBotInc()
         }
     })
 
     XeonBotInc.ev.on('creds.update', saveCreds)
-    
-    // Modify the event listener to log the update object
-    XeonBotInc.ev.on('group-participants.update', async (update) => {
-        console.log('Group Update Event:', JSON.stringify(update, null, 2));  // Add this line to debug
-        await handleGroupParticipantUpdate(XeonBotInc, update);
-    });
-
-    // Add status update handlers
-    XeonBotInc.ev.on('messages.upsert', async (m) => {
-        if (m.messages[0].key && m.messages[0].key.remoteJid === 'status@broadcast') {
-            await handleStatus(XeonBotInc, m);
-        }
-    });
-
-    // Handle status updates
-    XeonBotInc.ev.on('status.update', async (status) => {
-        await handleStatus(XeonBotInc, status);
-    });
-
-    // Handle message reactions (some status updates come through here)
-    XeonBotInc.ev.on('messages.reaction', async (status) => {
-        await handleStatus(XeonBotInc, status);
-    });
 
     return XeonBotInc
 }
-
 
 // Start the bot with error handling
 startXeonBotInc().catch(error => {
@@ -247,18 +158,8 @@ startXeonBotInc().catch(error => {
 // Better error handling
 process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err)
-    // Don't exit immediately to allow reconnection
 })
 
 process.on('unhandledRejection', (err) => {
     console.error('Unhandled Rejection:', err)
-    // Don't exit immediately to allow reconnection
-})
-
-let file = require.resolve(__filename)
-fs.watchFile(file, () => {
-    fs.unwatchFile(file)
-    console.log(chalk.redBright(`Update ${__filename}`))
-    delete require.cache[file]
-    require(file)
 })
