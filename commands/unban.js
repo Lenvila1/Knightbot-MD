@@ -1,50 +1,56 @@
 const fs = require('fs');
 const path = require('path');
-const { channelInfo } = require('../config/messageConfig');
+
+const bannedUsersFile = path.join(__dirname, '../database/banned.json');
 
 async function unbanCommand(sock, chatId, message) {
     let userToUnban;
     
-    // Check for mentioned users
+    // Verifica si se mencionó a un usuario
     if (message.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
         userToUnban = message.message.extendedTextMessage.contextInfo.mentionedJid[0];
     }
-    // Check for replied message
+    // Verifica si se respondió a un mensaje
     else if (message.message?.extendedTextMessage?.contextInfo?.participant) {
         userToUnban = message.message.extendedTextMessage.contextInfo.participant;
     }
     
     if (!userToUnban) {
         await sock.sendMessage(chatId, { 
-            text: 'Please mention the user or reply to their message to unban!', 
-            ...channelInfo 
+            text: '❌ *Debes mencionar un usuario o responder a su mensaje para desbanearlo.*'
         });
         return;
     }
 
     try {
-        const bannedUsers = JSON.parse(fs.readFileSync('./database/banned.json'));
+        // Verificar si el archivo existe
+        if (!fs.existsSync(bannedUsersFile)) {
+            fs.writeFileSync(bannedUsersFile, JSON.stringify([])); 
+        }
+
+        // Cargar la lista de baneados
+        const bannedUsers = JSON.parse(fs.readFileSync(bannedUsersFile));
         const index = bannedUsers.indexOf(userToUnban);
+
         if (index > -1) {
+            // Eliminar usuario de la lista de baneados
             bannedUsers.splice(index, 1);
-            fs.writeFileSync('./database/banned.json', JSON.stringify(bannedUsers, null, 2));
-            
+            fs.writeFileSync(bannedUsersFile, JSON.stringify(bannedUsers, null, 2));
+
             await sock.sendMessage(chatId, { 
-                text: `Successfully unbanned ${userToUnban.split('@')[0]}!`,
-                mentions: [userToUnban],
-                ...channelInfo 
+                text: `✅ *El usuario @${userToUnban.split('@')[0]} ha sido desbaneado correctamente.*`,
+                mentions: [userToUnban]
             });
         } else {
             await sock.sendMessage(chatId, { 
-                text: `${userToUnban.split('@')[0]} is not banned!`,
-                mentions: [userToUnban],
-                ...channelInfo 
+                text: `⚠️ *El usuario @${userToUnban.split('@')[0]} no está baneado.*`,
+                mentions: [userToUnban]
             });
         }
     } catch (error) {
-        console.error('Error in unban command:', error);
-        await sock.sendMessage(chatId, { text: 'Failed to unban user!', ...channelInfo });
+        console.error('❌ Error en el comando unban:', error);
+        await sock.sendMessage(chatId, { text: '🚨 *Error al intentar desbanear al usuario. Inténtalo de nuevo.*' });
     }
 }
 
-module.exports = unbanCommand; 
+module.exports = unbanCommand;
