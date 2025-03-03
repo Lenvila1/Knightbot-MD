@@ -6,7 +6,7 @@ const ffmpeg = require('ffmpeg-static');
 async function simageCommand(sock, quotedMessage, chatId) {
     try {
         if (!quotedMessage?.stickerMessage) {
-            await sock.sendMessage(chatId, { text: 'Please reply to a sticker!' });
+            await sock.sendMessage(chatId, { text: '❌ Debes responder a un sticker para convertirlo en imagen.' });
             return;
         }
 
@@ -21,7 +21,7 @@ async function simageCommand(sock, quotedMessage, chatId) {
         
         fs.writeFileSync(tempSticker, buffer);
 
-        // Convert webp to png using ffmpeg
+        // Convertir de webp a png usando ffmpeg
         await new Promise((resolve, reject) => {
             exec(`${ffmpeg} -i ${tempSticker} ${tempOutput}`, (error) => {
                 if (error) reject(error);
@@ -31,17 +31,17 @@ async function simageCommand(sock, quotedMessage, chatId) {
 
         await sock.sendMessage(chatId, { 
             image: fs.readFileSync(tempOutput),
-            caption: '✨ Here\'s your image!' 
+            caption: '✅ ¡Aquí está tu imagen convertida!' 
         });
 
-        // Cleanup
+        // Eliminar archivos temporales
         fs.unlinkSync(tempSticker);
         fs.unlinkSync(tempOutput);
 
     } catch (error) {
-        console.error('Error in simage command:', error);
-        await sock.sendMessage(chatId, { text: 'Failed to convert sticker to image!' });
+        console.error('Error en el comando simage:', error);
+        await sock.sendMessage(chatId, { text: '❌ No se pudo convertir el sticker en imagen. Intenta nuevamente.' });
     }
 }
 
-module.exports = simageCommand; 
+module.exports = simageCommand;
