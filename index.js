@@ -90,41 +90,33 @@ async function startXeonBotInc() {
 
     // Message handling
     XeonBotInc.ev.on('messages.upsert', async chatUpdate => {
-        try {
-            const mek = chatUpdate.messages[0]
-            if (!mek.message) return
-            mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-            if (mek.key && mek.key.remoteJid === 'status@broadcast') {
-                await handleStatus(XeonBotInc, chatUpdate);
-                return;
-            }
-            if (!XeonBotInc.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
-            if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
-            
-            try {
-                await handleMessages(XeonBotInc, chatUpdate, true)
-            } catch (err) {
-                console.error("Error in handleMessages:", err)
-                // Only try to send error message if we have a valid chatId
-                if (mek.key && mek.key.remoteJid) {
-                    await XeonBotInc.sendMessage(mek.key.remoteJid, { 
-                        text: '❌ An error occurred while processing your message.',
-                        contextInfo: {
-                            forwardingScore: 999,
-                            isForwarded: true,
-                            forwardedNewsletterMessageInfo: {
-                                newsletterJid: '120363161513685998@newsletter',
-                                newsletterName: 'KnightBot MD',
-                                serverMessageId: -1
-                            }
-                        }
-                    }).catch(console.error);
-                }
-            }
-        } catch (err) {
-            console.error("Error in messages.upsert:", err)
+    try {
+        const mek = chatUpdate.messages[0];
+        if (!mek.message) return;
+        mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message;
+        
+        if (mek.key && mek.key.remoteJid === 'status@broadcast') {
+            await handleStatus(XeonBotInc, chatUpdate);
+            return;
         }
-    })
+        if (!XeonBotInc.public && !mek.key.fromMe && chatUpdate.type === 'notify') return;
+        if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return;
+        
+        try {
+            await handleMessages(XeonBotInc, chatUpdate, true);
+        } catch (err) {
+            console.error("Error in handleMessages:", err);
+            // Only try to send error message if we have a valid chatId
+            if (mek.key && mek.key.remoteJid) {
+                await XeonBotInc.sendMessage(mek.key.remoteJid, { 
+                    text: '❌ An error occurred while processing your message.'
+                }).catch(console.error);
+            }
+        }
+    } catch (err) {
+        console.error("Error in messages.upsert:", err);
+    }
+});
 
     // Add these event handlers for better functionality
     XeonBotInc.decodeJid = (jid) => {
@@ -188,25 +180,14 @@ async function startXeonBotInc() {
             
             // Send message to bot's own number
             const botNumber = XeonBotInc.user.id.split(':')[0] + '@s.whatsapp.net';
-            await XeonBotInc.sendMessage(botNumber, { 
-                text: `🤖 Bot Connected Successfully!\n\n⏰ Time: ${new Date().toLocaleString()}\n✅ Status: Online and Ready!
-                \n Give a Star ⭐ to our bot:\n https://github.com/mruniquehacker/KnightBot-MD\n ✅Make sure to join below channel`,
-                contextInfo: {
-                    forwardingScore: 999,
-                    isForwarded: true,
-                    forwardedNewsletterMessageInfo: {
-                        newsletterJid: '120363161513685998@newsletter',
-                        newsletterName: 'KnightBot MD',
-                        serverMessageId: -1
-                    }
-                }
-            });
+await XeonBotInc.sendMessage(botNumber, { 
+    text: `🤖 Bot Connected Successfully!\n\n⏰ Time: ${new Date().toLocaleString()}\n✅ Status: Online and Ready!
+    \n Give a Star ⭐ to our bot:\n https://github.com/Lenvila1/KnightBot-MD\n ✅Make sure to join below channel`
+});
 
             await delay(1999)
             console.log(chalk.yellow(`\n\n                  ${chalk.bold.blue(`[ ${global.botname || 'KNIGHT BOT'} ]`)}\n\n`))
             console.log(chalk.cyan(`< ================================================== >`))
-            console.log(chalk.magenta(`\n${global.themeemoji || '•'} YT CHANNEL: MR UNIQUE HACKER`))
-            console.log(chalk.magenta(`${global.themeemoji || '•'} GITHUB: mrunqiuehacker`))
             console.log(chalk.magenta(`${global.themeemoji || '•'} WA NUMBER: ${owner}`))
             console.log(chalk.magenta(`${global.themeemoji || '•'} CREDIT: MR UNIQUE HACKER`))
             console.log(chalk.green(`${global.themeemoji || '•'} 🤖 Bot Connected Successfully! ✅`))
