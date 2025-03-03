@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
 
-// Load chatbot config
+// Cargar configuración del chatbot
 function loadChatbotConfig(groupId) {
     try {
         const configPath = path.join(__dirname, '../data/chatbot.json');
@@ -13,131 +13,117 @@ function loadChatbotConfig(groupId) {
         const data = JSON.parse(fs.readFileSync(configPath));
         return data[groupId];
     } catch (error) {
-        console.error('❌ Error loading chatbot config:', error.message);
+        console.error('❌ Error al cargar la configuración del chatbot:', error.message);
         return null;
     }
 }
 
+// Comando para activar o desactivar el chatbot en un grupo
 async function handleChatbotCommand(sock, chatId, message, match) {
     if (!match) {
         return sock.sendMessage(chatId, {
-            text: `*CHATBOT SETUP*\n\n*.chatbot on*\nEnable chatbot\n\n*.chatbot off*\nDisable chatbot in this group`
+            text: `🤖 *Configuración del Chatbot*\n\n` +
+                  `✅ *.chatbot on* - Activar el chatbot en este grupo\n` +
+                  `❌ *.chatbot off* - Desactivar el chatbot en este grupo`
         });
     }
 
     if (match === 'on') {
         const existingConfig = await getChatbot(chatId);
         if (existingConfig?.enabled) {
-            return sock.sendMessage(chatId, { text: '*Chatbot is already enabled for this group*' });
+            return sock.sendMessage(chatId, { text: '⚠️ *El chatbot ya está activado en este grupo.*' });
         }
         await setChatbot(chatId, true);
-        console.log(`✅ Chatbot settings updated for group ${chatId}`);
-        return sock.sendMessage(chatId, { text: '*Chatbot has been enabled for this group*' });
+        console.log(`✅ Chatbot activado en el grupo ${chatId}`);
+        return sock.sendMessage(chatId, { text: '✅ *El chatbot ha sido activado en este grupo.*' });
     }
 
     if (match === 'off') {
         const config = await getChatbot(chatId);
         if (!config?.enabled) {
-            return sock.sendMessage(chatId, { text: '*Chatbot is already disabled for this group*' });
+            return sock.sendMessage(chatId, { text: '⚠️ *El chatbot ya está desactivado en este grupo.*' });
         }
         await removeChatbot(chatId);
-        console.log(`✅ Chatbot settings updated for group ${chatId}`);
-        return sock.sendMessage(chatId, { text: '*Chatbot has been disabled for this group*' });
+        console.log(`❌ Chatbot desactivado en el grupo ${chatId}`);
+        return sock.sendMessage(chatId, { text: '❌ *El chatbot ha sido desactivado en este grupo.*' });
     }
 
-    return sock.sendMessage(chatId, { text: '*Invalid command. Use .chatbot to see usage*' });
+    return sock.sendMessage(chatId, { text: '⚠️ *Comando inválido. Usa .chatbot para ver las opciones.*' });
 }
 
+// Manejo de respuestas del chatbot
 async function handleChatbotResponse(sock, chatId, message, userMessage, senderId) {
     const config = loadChatbotConfig(chatId);
     if (!config?.enabled) return;
 
     try {
-        // Debug logs
-        console.log('Starting chatbot response handler');
+        console.log('📩 Procesando mensaje para chatbot...');
         console.log('Chat ID:', chatId);
-        console.log('User Message:', userMessage);
+        console.log('Mensaje del usuario:', userMessage);
 
-        // Get bot's ID
+        // Obtener el número del bot
         const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-        console.log('Bot Number:', botNumber);
 
-        // Check for mentions and replies
+        // Verificar si el mensaje menciona al bot o es una respuesta a este
         let isBotMentioned = false;
         let isReplyToBot = false;
 
-        // Check if message is a reply and contains bot mention
         if (message.message?.extendedTextMessage) {
             const mentionedJid = message.message.extendedTextMessage.contextInfo?.mentionedJid || [];
             const quotedParticipant = message.message.extendedTextMessage.contextInfo?.participant;
             
-            // Check if bot is mentioned in the reply
             isBotMentioned = mentionedJid.some(jid => jid === botNumber);
-            
-            // Check if replying to bot's message
             isReplyToBot = quotedParticipant === botNumber;
-            
-            console.log('Message is a reply with mention:', {
-                mentionedJid,
-                quotedParticipant,
-                isBotMentioned,
-                isReplyToBot
-            });
-        }
-        // Also check regular mentions in conversation
-        else if (message.message?.conversation) {
+        } else if (message.message?.conversation) {
             isBotMentioned = userMessage.includes(`@${botNumber.split('@')[0]}`);
         }
 
         if (!isBotMentioned && !isReplyToBot) {
-            console.log('Bot not mentioned or replied to');
+            console.log('🚫 El bot no fue mencionado ni respondido.');
             return;
         }
 
-        // Clean the message
-        let cleanedMessage = userMessage;
-        if (isBotMentioned) {
-            cleanedMessage = cleanedMessage.replace(new RegExp(`@${botNumber.split('@')[0]}`, 'g'), '').trim();
-        }
+        // Limpiar el mensaje eliminando la mención al bot
+        let cleanedMessage = userMessage.replace(new RegExp(`@${botNumber.split('@')[0]}`, 'g'), '').trim();
 
-        // Get GPT-3 response
-        const response = await getGPT3Response(cleanedMessage || "hi");
-        console.log('GPT-3 Response:', response);
+        // Obtener respuesta de la IA
+        const response = await getGPT3Response(cleanedMessage || "Hola");
+        console.log('🤖 Respuesta del Chatbot:', response);
 
         if (!response) {
             await sock.sendMessage(chatId, { 
-                text: "I couldn't process your request at the moment.",
+                text: "⚠️ *No puedo procesar tu solicitud en este momento.*",
                 quoted: message
             });
             return;
         }
 
-        // Send response as a reply with mention
+        // Enviar respuesta del chatbot
         await sock.sendMessage(chatId, {
             text: `@${senderId.split('@')[0]} ${response}`,
             quoted: message,
             mentions: [senderId]
         });
 
-        // Only log successful responses
-        console.log(`✅ Chatbot responded in group ${chatId}`);
+        console.log(`✅ Chatbot respondió en el grupo ${chatId}`);
     } catch (error) {
-        console.error('❌ Error in chatbot response:', error.message);
+        console.error('❌ Error en la respuesta del chatbot:', error.message);
         await sock.sendMessage(chatId, { 
-            text: "Sorry, I encountered an error while processing your message.",
+            text: "⚠️ *Ocurrió un error al procesar tu mensaje.*",
             quoted: message,
             mentions: [senderId]
         });
     }
 }
 
+// Obtener respuesta de GPT-3
 async function getGPT3Response(userMessage) {
     try {
-        console.log('Getting GPT-3 response for:', userMessage);
+        console.log('📡 Obteniendo respuesta de GPT-3 para:', userMessage);
         
         const systemPrompt = {
             role: "system",
-            content: "You are KnightBot CHATBOT, an intelligent and feature-rich assistant. Behave like human and talk like human. Understand how sender responds, behaves accordingly. Enhance your responses with relevant emojis when appropriate while maintaining clarity and professionalism."
+            content: "Eres KnightBot, un chatbot inteligente y amigable. Responde de forma natural y con un tono humano. Usa emojis cuando sea apropiado y responde con claridad."
         };
 
         const userPrompt = {
@@ -157,16 +143,16 @@ async function getGPT3Response(userMessage) {
         });
 
         if (!response.ok) {
-            console.error('GPT-3 API response not ok:', response.status);
-            throw new Error("API call failed");
+            console.error('❌ Error en la API de GPT-3:', response.status);
+            throw new Error("La llamada a la API falló");
         }
 
         const data = await response.json();
-        console.log('GPT-3 API response:', data);
+        console.log('✅ Respuesta recibida de la API:', data);
         return data.result;
 
     } catch (error) {
-        console.error("GPT-3 API error:", error);
+        console.error("❌ Error en la API de GPT-3:", error);
         return null;
     }
 }
@@ -174,4 +160,4 @@ async function getGPT3Response(userMessage) {
 module.exports = {
     handleChatbotCommand,
     handleChatbotResponse
-}; 
+};
