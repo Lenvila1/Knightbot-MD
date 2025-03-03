@@ -112,14 +112,6 @@ async function startXeonBotInc() {
                 if (mek.key && mek.key.remoteJid) {
     await XeonBotInc.sendMessage(mek.key.remoteJid, { 
         text: '? An error occurred while processing your message.',
-        contextInfo: {
-            forwardingScore: 999,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '0029VajM7fxEAKWOOIhQbR0K@newsletter', // ?? Aquí va tu canal
-                newsletterName: 'Mi Canal Oficial',
-                serverMessageId: -1
-            }
                         }
                     }).catch(console.error);
                 }
@@ -195,15 +187,6 @@ const botNumber = XeonBotInc.user.id.split(':')[0] + '@s.whatsapp.net';
 await XeonBotInc.sendMessage(botNumber, { 
     text: `🤖 Bot Connected Successfully!\n\n⏰ Time: ${new Date().toLocaleString()}\n✅ Status: Online and Ready!
     \n Give a Star ⭐ to our bot:\n https://github.com/Lenvila1/KnightBot-MD\n ✅Make sure to join below channel`,
-    contextInfo: {
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-            newsletterJid: '0029VajM7fxEAKWOOIhQbR0K@newsletter', 
-            newsletterName: 'Mi Canal Oficial',
-            serverMessageId: -1
-        }
-    }
 });
 
 
