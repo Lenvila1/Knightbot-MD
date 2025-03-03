@@ -1,150 +1,83 @@
 const settings = require('../settings');
-const fs = require('fs');
-const path = require('path');
 
-async function helpCommand(sock, chatId, channelLink) {
+async function helpCommand(sock, chatId) {
     const helpMessage = `
-╔═══════════════════╗
-   *🤖 ${settings.botName || 'KnightBot-MD'}*  
-   Version: *${settings.version || '1.0.0'}*
-   by ${settings.botOwner || 'Mr Unique Hacker'}
-   YT : ${global.ytch}
-╚═══════════════════╝
+┏━━━━━━━━━━━━━━━
+┃ *🤖 ${settings.botName || 'KnightBot-MD'}*  
+┃ 🔹 Versión: *${settings.version || '1.0.0'}*
+┗━━━━━━━━━━━━━━━
+*SIGAN EL CANAL https://whatsapp.com/channel/0029VajM7fxEAKWOOIhQbR0K*
 
-*Available Commands:*
+📌 *LISTA DE COMANDOS DISPONIBLES:*
 
-╔═══════════════════╗
-🌐 *General Commands*:
-║ ➤ .help or .menu
-║ ➤ .ping
-║ ➤ .alive
-║ ➤ .tts <text>
-║ ➤ .owner
-║ ➤ .joke
-║ ➤ .quote
-║ ➤ .fact
-║ ➤ .weather <city>
-║ ➤ .news
-║ ➤ .attp <text>
-║ ➤ .lyrics <song_title>
-║ ➤ .8ball <question>
-║ ➤ .groupinfo
-║ ➤ .staff or .admins 
-║ ➤ .vv
-╚═══════════════════╝
+🌀 *COMANDOS GENERALES*:
+🎲 *.help* 
+✅ *.ping* 
+⚡ *.alive* 
+🔊 *.tts <texto>* 
+📜 *.quote* -
+🤣 *.joke* 
+🌍 *.weather <ciudad>* 
+📰 *.news* 
+🎶 *.lyrics <canción>* 
+🔮 *.8ball <pregunta>*
+📢 *.groupinfo* 
+👥 *.staff* 
 
-╔═══════════════════╗
-🎨 *Image/Sticker Commands*:
-║ ➤ .blur <image>
-║ ➤ .simage <reply to sticker>
-║ ➤ .sticker <reply to image>
-║ ➤ .meme
-║ ➤ .take <packname> 
-║ ➤ .emojimix <emj1>+<emj2>
-╚═══════════════════╝   
+🖼️ *STICKERS & IMÁGENES*:
+🔄 *.blur <imagen>* 
+🎨 *.sticker* 
+📷 *.simage* 
+🖼️ *.meme* 
+🔠 *.attp <texto>*
+🎭 *.emojimix 😎+🥰* 
 
-╔═══════════════════╗
-🛠️ *Admin Commands*:
-║ ➤ .ban @user
-║ ➤ .promote @user
-║ ➤ .demote @user
-║ ➤ .mute <minutes>
-║ ➤ .unmute
-║ ➤ .delete or .del
-║ ➤ .kick @user
-║ ➤ .warnings @user
-║ ➤ .warn @user
-║ ➤ .antilink
-║ ➤ .antibadword
-║ ➤ .clear
-║ ➤ .tag <message>
-║ ➤ .tagall
-║ ➤ .chatbot
-║ ➤ .resetlink
-╚═══════════════════╝
+⚔️ *ADMINISTRACIÓN DE GRUPOS*:
+🚫 *.ban @usuario* 
+⬆️ *.promote @usuario* 
+⬇️ *.demote @usuario* 
+🔇 *.mute <minutos>* 
+🔊 *.unmute* 
+❌ *.delete* 
+👮 *.kick @usuario* 
+⚠️ *.warnings @usuario* 
+🚨 *.antilink* 
+🔤 *.antibadword* 
+📢 *.tagall* 
 
-╔═══════════════════╗
-🛠️ *Owner Commands*:
-║ ➤ .mode
-║ ➤ .autostatus
-║ ➤ .clearsession
-╚═══════════════════╝
+👑 *COMANDOS PARA EL DUEÑO*:
+🔄 *.mode* 
+🛠️ *.autostatus* 
+💾 *.clearsession* 
 
-╔═══════════════════╗
-🔗 *Github Commands:*
-║ ➤ .git
-║ ➤ .github
-║ ➤ .sc
-║ ➤ .script
-║ ➤ .repo
-╚═══════════════════╝
+💻 *GITHUB & DESCARGAS*:
+🔗 *.github* 
+📥 *.play <canción>* 
+🎵 *.song <nombre>* 
 
-╔═══════════════════╗
-🎮 *Game Commands*:
-║ ➤ .tictactoe @user
-║ ➤ .hangman
-║ ➤ .guess <letter>
-║ ➤ .trivia
-║ ➤ .answer <answer>
-║ ➤ .truth
-║ ➤ .dare
-╚═══════════════════╝
+🎮 *JUEGOS*:
+❌⭕ *.tictactoe @usuario*
+📝 *.hangman* 
+🧠 *.trivia* 
+🎯 *.truth* 
+🔥 *.dare* 
 
-╔═══════════════════╗
-🎯 *Fun Commands*:
-║ ➤ .compliment @user
-║ ➤ .insult @user
-║ ➤ .flirt 
-║ ➤ .character @user
-║ ➤ .wasted @user
-║ ➤ .ship @user
-╚═══════════════════╝
+🔥 *DIVERSIÓN*:
+🎭 *.compliment @usuario*
+💥 *.insult @usuario* 
+😍 *.flirt* 
+🧬 *.character @usuario* 
+💞 *.ship @usuario*
 
-╔═══════════════════╗
-🎯 *Downloader*:
-║ ➤ .play <song_name>
-║ ➤ .song <song_name>
-╚═══════════════════╝
-
-Join our channel for updates:`;
+🚀 *¡KnightBot siempre listo para ayudarte!*
+*SIGANME EN IG https://www.instagram.com/vilenkn?igsh=MWRpZDhsbTB3Y25wNA==*
+`;
 
     try {
-        const imagePath = path.join(__dirname, '../assets/bot_image.jpg');
-        
-        if (fs.existsSync(imagePath)) {
-            const imageBuffer = fs.readFileSync(imagePath);
-            
-            await sock.sendMessage(chatId, {
-                image: imageBuffer,
-                caption: helpMessage,
-                contextInfo: {
-                    forwardingScore: 999,
-                    isForwarded: true,
-                    forwardedNewsletterMessageInfo: {
-                        newsletterJid: '120363161513685998@newsletter',
-                        newsletterName: 'KnightBot MD by Mr Unique Hacker',
-                        serverMessageId: -1
-                    }
-                }
-            });
-        } else {
-            console.error('Bot image not found at:', imagePath);
-            await sock.sendMessage(chatId, { 
-                text: helpMessage,
-                contextInfo: {
-                    forwardingScore: 999,
-                    isForwarded: true,
-                    forwardedNewsletterMessageInfo: {
-                        newsletterJid: '120363161513685998@newsletter',
-                        newsletterName: 'KnightBot MD by Mr Unique Hacker',
-                        serverMessageId: -1
-                    } 
-                }
-            });
-        }
-    } catch (error) {
-        console.error('Error in help command:', error);
         await sock.sendMessage(chatId, { text: helpMessage });
+    } catch (error) {
+        console.error('Error en el comando de ayuda:', error);
+        await sock.sendMessage(chatId, { text: '❌ Error al mostrar la lista de comandos.' });
     }
 }
 
