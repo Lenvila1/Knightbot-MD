@@ -1,64 +1,64 @@
 const compliments = [
-    "You're amazing just the way you are!",
-    "You have a great sense of humor!",
-    "You're incredibly thoughtful and kind.",
-    "You are more powerful than you know.",
-    "You light up the room!",
-    "You're a true friend.",
-    "You inspire me!",
-    "Your creativity knows no bounds!",
-    "You have a heart of gold.",
-    "You make a difference in the world.",
-    "Your positivity is contagious!",
-    "You have an incredible work ethic.",
-    "You bring out the best in people.",
-    "Your smile brightens everyone's day.",
-    "You're so talented in everything you do.",
-    "Your kindness makes the world a better place.",
-    "You have a unique and wonderful perspective.",
-    "Your enthusiasm is truly inspiring!",
-    "You are capable of achieving great things.",
-    "You always know how to make someone feel special.",
-    "Your confidence is admirable.",
-    "You have a beautiful soul.",
-    "Your generosity knows no limits.",
-    "You have a great eye for detail.",
-    "Your passion is truly motivating!",
-    "You are an amazing listener.",
-    "You're stronger than you think!",
-    "Your laughter is infectious.",
-    "You have a natural gift for making others feel valued.",
-    "You make the world a better place just by being in it."
+    "¡Eres increíble tal como eres!",
+    "¡Tienes un gran sentido del humor!",
+    "Eres una persona increíblemente amable y considerada.",
+    "Eres más fuerte de lo que crees.",
+    "¡Iluminas la habitación con tu presencia!",
+    "Eres un amigo verdadero.",
+    "¡Eres una inspiración!",
+    "Tu creatividad no tiene límites.",
+    "Tienes un corazón de oro.",
+    "Haces la diferencia en el mundo.",
+    "¡Tu positividad es contagiosa!",
+    "Tienes una ética de trabajo impresionante.",
+    "Sacas lo mejor de las personas.",
+    "Tu sonrisa alegra el día de todos.",
+    "Eres talentoso en todo lo que haces.",
+    "Tu amabilidad hace del mundo un mejor lugar.",
+    "Tienes una perspectiva única y maravillosa.",
+    "¡Tu entusiasmo es realmente inspirador!",
+    "Eres capaz de lograr grandes cosas.",
+    "Siempre sabes cómo hacer sentir especial a alguien.",
+    "Tu confianza es admirable.",
+    "Tienes un alma hermosa.",
+    "Tu generosidad no tiene límites.",
+    "Tienes un gran ojo para los detalles.",
+    "¡Tu pasión es realmente motivadora!",
+    "Eres un gran oyente.",
+    "¡Eres más fuerte de lo que piensas!",
+    "Tu risa es contagiosa.",
+    "Tienes un don natural para hacer que los demás se sientan valorados.",
+    "Haces del mundo un lugar mejor simplemente con tu existencia."
 ];
 
 async function complimentCommand(sock, chatId, message) {
     try {
         if (!message || !chatId) {
-            console.log('Invalid message or chatId:', { message, chatId });
+            console.log('Mensaje o chatId inválido:', { message, chatId });
             return;
         }
 
         let userToCompliment;
         
-        // Check for mentioned users
+        // Verificar si hay usuarios mencionados
         if (message.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
             userToCompliment = message.message.extendedTextMessage.contextInfo.mentionedJid[0];
         }
-        // Check for replied message
+        // Verificar si es una respuesta a un mensaje
         else if (message.message?.extendedTextMessage?.contextInfo?.participant) {
             userToCompliment = message.message.extendedTextMessage.contextInfo.participant;
         }
         
         if (!userToCompliment) {
             await sock.sendMessage(chatId, { 
-                text: 'Please mention someone or reply to their message to compliment them!'
+                text: 'Por favor, menciona a alguien o responde a su mensaje para elogiarlo.'
             });
             return;
         }
 
         const compliment = compliments[Math.floor(Math.random() * compliments.length)];
 
-        // Add delay to avoid rate limiting
+        // Agregar un pequeño retraso para evitar limitaciones de tasa
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         await sock.sendMessage(chatId, { 
@@ -66,23 +66,23 @@ async function complimentCommand(sock, chatId, message) {
             mentions: [userToCompliment]
         });
     } catch (error) {
-        console.error('Error in compliment command:', error);
-        if (error.data === 429) {
+        console.error('Error en el comando de elogio:', error);
+        if (error.data === 429) { // Código de error 429: demasiadas solicitudes
             await new Promise(resolve => setTimeout(resolve, 2000));
             try {
                 await sock.sendMessage(chatId, { 
-                    text: 'Please try again in a few seconds.'
+                    text: 'Por favor, intenta nuevamente en unos segundos.'
                 });
             } catch (retryError) {
-                console.error('Error sending retry message:', retryError);
+                console.error('Error al enviar mensaje de reintento:', retryError);
             }
         } else {
             try {
                 await sock.sendMessage(chatId, { 
-                    text: 'An error occurred while sending the compliment.'
+                    text: 'Ocurrió un error al enviar el elogio.'
                 });
             } catch (sendError) {
-                console.error('Error sending error message:', sendError);
+                console.error('Error al enviar mensaje de error:', sendError);
             }
         }
     }
