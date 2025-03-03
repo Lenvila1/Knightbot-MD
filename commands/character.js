@@ -1,46 +1,44 @@
 const axios = require('axios');
-const { channelInfo } = require('../config/messageConfig');
 
 async function characterCommand(sock, chatId, message) {
     let userToAnalyze;
     
-    // Check for mentioned users
+    // Verificar si se mencionó a un usuario
     if (message.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
         userToAnalyze = message.message.extendedTextMessage.contextInfo.mentionedJid[0];
     }
-    // Check for replied message
+    // Verificar si se respondió a un mensaje
     else if (message.message?.extendedTextMessage?.contextInfo?.participant) {
         userToAnalyze = message.message.extendedTextMessage.contextInfo.participant;
     }
     
     if (!userToAnalyze) {
         await sock.sendMessage(chatId, { 
-            text: 'Please mention someone or reply to their message to analyze their character!', 
-            ...channelInfo 
+            text: '❌ *Debes mencionar a alguien o responder a su mensaje para analizar su personalidad!*' 
         });
         return;
     }
 
     try {
-        // Get user's profile picture
+        // Obtener la foto de perfil del usuario
         let profilePic;
         try {
             profilePic = await sock.profilePictureUrl(userToAnalyze, 'image');
         } catch {
-            profilePic = 'https://i.imgur.com/2wzGhpF.jpeg'; // Default image if no profile pic
+            profilePic = 'https://i.imgur.com/2wzGhpF.jpeg'; // Imagen por defecto si no tiene foto
         }
 
         const traits = [
-            "Intelligent", "Creative", "Determined", "Ambitious", "Caring",
-            "Charismatic", "Confident", "Empathetic", "Energetic", "Friendly",
-            "Generous", "Honest", "Humorous", "Imaginative", "Independent",
-            "Intuitive", "Kind", "Logical", "Loyal", "Optimistic",
-            "Passionate", "Patient", "Persistent", "Reliable", "Resourceful",
-            "Sincere", "Thoughtful", "Understanding", "Versatile", "Wise"
+            "Inteligente", "Creativo", "Determinado", "Ambicioso", "Cariñoso",
+            "Carismático", "Seguro", "Empático", "Energético", "Amigable",
+            "Generoso", "Honesto", "Divertido", "Imaginativo", "Independiente",
+            "Intuitivo", "Amable", "Lógico", "Leal", "Optimista",
+            "Apasionado", "Paciente", "Persistente", "Confiable", "Ingenioso",
+            "Sincero", "Reflexivo", "Comprensivo", "Versátil", "Sabio"
         ];
 
-        // Get 3-5 random traits
-        const numTraits = Math.floor(Math.random() * 3) + 3; // Random number between 3 and 5
+        // Seleccionar entre 3 y 5 rasgos aleatorios
+        const numTraits = Math.floor(Math.random() * 3) + 3;
         const selectedTraits = [];
         for (let i = 0; i < numTraits; i++) {
             const randomTrait = traits[Math.floor(Math.random() * traits.length)];
@@ -49,34 +47,32 @@ async function characterCommand(sock, chatId, message) {
             }
         }
 
-        // Calculate random percentages for each trait
+        // Calcular porcentajes aleatorios para cada rasgo
         const traitPercentages = selectedTraits.map(trait => {
-            const percentage = Math.floor(Math.random() * 41) + 60; // Random number between 60-100
-            return `${trait}: ${percentage}%`;
+            const percentage = Math.floor(Math.random() * 41) + 60; // Número aleatorio entre 60-100
+            return `✨ ${trait}: ${percentage}%`;
         });
 
-        // Create character analysis message
-        const analysis = `🔮 *Character Analysis* 🔮\n\n` +
-            `👤 *User:* ${userToAnalyze.split('@')[0]}\n\n` +
-            `✨ *Key Traits:*\n${traitPercentages.join('\n')}\n\n` +
-            `🎯 *Overall Rating:* ${Math.floor(Math.random() * 21) + 80}%\n\n` +
-            `Note: This is a fun analysis and should not be taken seriously!`;
+        // Crear el mensaje de análisis de personalidad
+        const analysis = `🔮 *Análisis de Personalidad* 🔮\n\n` +
+            `👤 *Usuario:* @${userToAnalyze.split('@')[0]}\n\n` +
+            `✨ *Rasgos principales:*\n${traitPercentages.join('\n')}\n\n` +
+            `🎯 *Puntaje general:* ${Math.floor(Math.random() * 21) + 80}%\n\n` +
+            `🔍 *Nota:* Este análisis es solo por diversión y no debe tomarse en serio.`;
 
-        // Send the analysis with the user's profile picture
+        // Enviar el análisis junto con la foto de perfil del usuario
         await sock.sendMessage(chatId, {
             image: { url: profilePic },
             caption: analysis,
-            mentions: [userToAnalyze],
-            ...channelInfo
+            mentions: [userToAnalyze]
         });
 
     } catch (error) {
-        console.error('Error in character command:', error);
+        console.error('Error en el comando de análisis de personalidad:', error);
         await sock.sendMessage(chatId, { 
-            text: 'Failed to analyze character! Try again later.',
-            ...channelInfo 
+            text: '❌ *No se pudo analizar la personalidad. Inténtalo más tarde.*'
         });
     }
 }
 
-module.exports = characterCommand; 
+module.exports = characterCommand;
