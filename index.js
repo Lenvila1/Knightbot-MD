@@ -61,9 +61,6 @@ global.themeemoji = "•"
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code")
 const useMobile = process.argv.includes("--mobile")
 
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-const question = (text) => new Promise((resolve) => rl.question(text, resolve))
-         
 async function startXeonBotInc() {
     let { version, isLatest } = await fetchLatestBaileysVersion()
     const { state, saveCreds } = await useMultiFileAuthState(`./session`)
@@ -169,24 +166,18 @@ async function startXeonBotInc() {
 
     // Handle pairing code
     if (pairingCode && !XeonBotInc.authState.creds.registered) {
-        if (useMobile) throw new Error('Cannot use pairing code with mobile api')
+    if (useMobile) throw new Error('Cannot use pairing code with mobile API');
 
-        let phoneNumber
-        if (!!global.phoneNumber) {
-            phoneNumber = global.phoneNumber
-        } else {
-            phoneNumber = await question(chalk.bgBlack(chalk.greenBright(`Please type your WhatsApp number 😍\nFor example: +917023951514 : `)))
-        }
+    let phoneNumber = "+528117062699"; 
 
-        phoneNumber = phoneNumber.replace(/[^0-9]/g, '')
+    phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
 
-        // Request pairing code
-        setTimeout(async () => {
-            let code = await XeonBotInc.requestPairingCode(phoneNumber)
-            code = code?.match(/.{1,4}/g)?.join("-") || code
-            console.log(chalk.black(chalk.bgGreen(`Your Pairing Code : `)), chalk.black(chalk.white(code)))
-        }, 3000)
-    }
+    setTimeout(async () => {
+        let code = await XeonBotInc.requestPairingCode(phoneNumber);
+        code = code?.match(/.{1,4}/g)?.join("-") || code;
+        console.log(chalk.black(chalk.bgGreen(`Your Pairing Code: `)), chalk.black(chalk.white(code)));
+    }, 3000);
+}
 
     // Connection handling
     XeonBotInc.ev.on('connection.update', async (s) => {
