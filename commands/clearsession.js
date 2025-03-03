@@ -1,133 +1,115 @@
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 const isOwner = require('../helpers/isOwner');
-
-const channelInfo = {
-    contextInfo: {
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363161513685998@newsletter',
-            newsletterName: 'KnightBot MD',
-            serverMessageId: -1
-        }
-    }
-};
 
 async function clearSessionCommand(sock, chatId, senderId) {
     try {
-        // Check if sender is owner
+        // Verificar si el remitente es el propietario
         if (!isOwner(senderId)) {
             await sock.sendMessage(chatId, { 
-                text: '❌ This command can only be used by the owner!',
-                ...channelInfo
+                text: '❌ ¡Este comando solo puede ser usado por el propietario!'
             });
             return;
         }
 
-        // Define session directory
+        // Definir el directorio de sesión
         const sessionDir = path.join(__dirname, '../session');
 
         if (!fs.existsSync(sessionDir)) {
             await sock.sendMessage(chatId, { 
-                text: '❌ Session directory not found!',
-                ...channelInfo
+                text: '❌ ¡No se encontró el directorio de sesión!'
             });
             return;
         }
 
-        let filesCleared = 0;
-        let errors = 0;
-        let errorDetails = [];
+        let archivosEliminados = 0;
+        let errores = 0;
+        let detallesErrores = [];
 
-        // Send initial status
+        // Enviar mensaje de estado inicial
         await sock.sendMessage(chatId, { 
-            text: `🔍 Optimizing session files for better performance...`,
-            ...channelInfo
+            text: '🔍 Optimizando archivos de sesión para mejorar el rendimiento...'
         });
 
-        const files = fs.readdirSync(sessionDir);
+        const archivos = fs.readdirSync(sessionDir);
         
-        // Count files by type for optimization
+        // Contar archivos por tipo para optimización
         let appStateSyncCount = 0;
         let preKeyCount = 0;
 
-        for (const file of files) {
-            if (file.startsWith('app-state-sync-')) appStateSyncCount++;
-            if (file.startsWith('pre-key-')) preKeyCount++;
+        for (const archivo of archivos) {
+            if (archivo.startsWith('app-state-sync-')) appStateSyncCount++;
+            if (archivo.startsWith('pre-key-')) preKeyCount++;
         }
 
-        for (const file of files) {
+        for (const archivo of archivos) {
             try {
-                // Skip protected files
-                if (file === 'creds.json') {
+                // Omitir archivos protegidos
+                if (archivo === 'creds.json') {
                     continue;
                 }
 
-                const filePath = path.join(sessionDir, file);
-                if (!fs.statSync(filePath).isFile()) continue;
+                const rutaArchivo = path.join(sessionDir, archivo);
+                if (!fs.statSync(rutaArchivo).isFile()) continue;
 
-                // Optimize app-state-sync files (keep only latest 3)
-                if (file.startsWith('app-state-sync-')) {
+                // Optimizar archivos "app-state-sync" (mantener solo los últimos 3)
+                if (archivo.startsWith('app-state-sync-')) {
                     if (appStateSyncCount > 3) {
-                        fs.unlinkSync(filePath);
-                        filesCleared++;
+                        fs.unlinkSync(rutaArchivo);
+                        archivosEliminados++;
                         appStateSyncCount--;
                     }
                     continue;
                 }
 
-                // Optimize pre-key files (keep only latest 5)
-                if (file.startsWith('pre-key-')) {
+                // Optimizar archivos "pre-key" (mantener solo los últimos 5)
+                if (archivo.startsWith('pre-key-')) {
                     if (preKeyCount > 5) {
-                        fs.unlinkSync(filePath);
-                        filesCleared++;
+                        fs.unlinkSync(rutaArchivo);
+                        archivosEliminados++;
                         preKeyCount--;
                     }
                     continue;
                 }
 
-                // Clear old sender-key files
-                if (file.startsWith('sender-key-')) {
-                    const stats = fs.statSync(filePath);
-                    const fileAge = Date.now() - stats.mtimeMs;
-                    // Clear only if older than 6 hours
-                    if (fileAge > 21600000) {
-                        fs.unlinkSync(filePath);
-                        filesCleared++;
+                // Eliminar archivos antiguos de "sender-key"
+                if (archivo.startsWith('sender-key-')) {
+                    const stats = fs.statSync(rutaArchivo);
+                    const antigüedadArchivo = Date.now() - stats.mtimeMs;
+                    // Eliminar solo si tiene más de 6 horas
+                    if (antigüedadArchivo > 21600000) {
+                        fs.unlinkSync(rutaArchivo);
+                        archivosEliminados++;
                     }
                 }
 
             } catch (err) {
-                console.error('Error processing file:', file, err);
-                errors++;
-                errorDetails.push(`${file}: ${err.message}`);
+                console.error('Error procesando archivo:', archivo, err);
+                errores++;
+                detallesErrores.push(`${archivo}: ${err.message}`);
             }
         }
 
-        // Send optimized success message
-        let resultMessage = `✨ *Session Optimization Complete*\n\n` +
-                          `🔄 Files optimized: ${filesCleared}\n` +
-                          `⚡ Bot performance improved!\n\n` +
-                          `*Note:* Bot will maintain faster response times now.`;
+        // Enviar mensaje de éxito de optimización
+        let mensajeResultado = `✨ *Optimización de sesión completada*\n\n` +
+                               `🔄 Archivos optimizados: ${archivosEliminados}\n` +
+                               `⚡ ¡El rendimiento del bot ha mejorado!\n\n` +
+                               `*Nota:* Ahora el bot responderá más rápido.`;
 
-        if (errors > 0) {
-            resultMessage += `\n\n⚠️ Skipped ${errors} file(s) for safety.`;
+        if (errores > 0) {
+            mensajeResultado += `\n\n⚠️ Se omitieron ${errores} archivo(s) por seguridad.`;
         }
 
         await sock.sendMessage(chatId, { 
-            text: resultMessage,
-            ...channelInfo
+            text: mensajeResultado
         });
 
     } catch (error) {
-        console.error('Error in clearsession command:', error);
+        console.error('Error en el comando clearsession:', error);
         await sock.sendMessage(chatId, { 
-            text: '❌ Error occurred while optimizing sessions!\n' + error.message,
-            ...channelInfo
+            text: '❌ ¡Ocurrió un error al optimizar la sesión!\n' + error.message
         });
     }
 }
 
-module.exports = clearSessionCommand; 
+module.exports = clearSessionCommand;
