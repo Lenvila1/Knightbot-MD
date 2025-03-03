@@ -8,7 +8,7 @@ async function attpCommand(sock, chatId, message) {
     const text = userMessage.split(' ').slice(1).join(' ');
 
     if (!text) {
-        await sock.sendMessage(chatId, { text: 'Please provide text after the .attp command.' });
+        await sock.sendMessage(chatId, { text: '⚠️ *Debes proporcionar un texto después del comando .attp*' });
         return;
     }
 
@@ -37,14 +37,14 @@ async function attpCommand(sock, chatId, message) {
         await sock.sendMessage(chatId, {
             sticker: stickerBuffer,
             mimetype: 'image/webp',
-            packname: 'My Sticker Pack', 
-            author: 'My Bot', 
+            packname: 'Paquete de Stickers', 
+            author: 'Mi Bot', 
         });
 
         fs.unlinkSync(stickerPath);
     } catch (error) {
-        console.error('Error generating sticker:', error);
-        await sock.sendMessage(chatId, { text: 'Failed to generate the sticker. Please try again later.' });
+        console.error('Error al generar el sticker:', error);
+        await sock.sendMessage(chatId, { text: '❌ *Error al generar el sticker. Inténtalo nuevamente más tarde.*' });
     }
 }
 
