@@ -1,29 +1,40 @@
-let handler = async (m, { conn, text }) => {
-    if (!text) return conn.reply(m.chat, '> Ingrese el texto que se enviará como spam!', m);
+const { isAdmin } = require('../helpers/isAdmin');
 
-    let pesan = ${text};
-    //await m.reply('INICIO DE SPAM!\n\n*Nota: El Bot enviará el mensaje 30 veces*');
+async function spamChatCommand(sock, chatId, senderId, message) {
+    try {
+        // ✅ Verificar si el usuario es el OWNER
+        const botOwner = 'tu-numero-aqui@s.whatsapp.net'; // 🔹 Reemplaza con tu número en formato internacional
+        if (senderId !== botOwner) {
+            await sock.sendMessage(chatId, { text: '❌ Solo el *Owner* puede usar este comando.' });
+            return;
+        }
 
-    // Obtener los participantes del grupo y filtrar solo los que no son administradores
-    let participants = (await conn.groupMetadata(m.chat)).participants;
-    let nonAdmins = participants
-        .filter(member => !member.admin) // Excluir administradores
-        .map(member => member.id); // Obtener solo los IDs de los no administradores
+        // ✅ Extraer el mensaje de spam
+        const text = message.message?.conversation || message.message?.extendedTextMessage?.text;
+        if (!text) {
+            await sock.sendMessage(chatId, { text: '❌ Debes ingresar un mensaje para spamear.\n\nEjemplo:\n.spamchat Esto es una prueba' });
+            return;
+        }
 
-    // Enviar el mensaje 30 veces a los no administradores
-    for (let i = 0; i < 30; i++) {
-        await conn.sendMessage(m.chat, {
-            text: pesan,
-            mentions: nonAdmins
-        });
+        // ✅ Obtener los participantes del grupo y excluir administradores
+        const groupMetadata = await sock.groupMetadata(chatId);
+        const nonAdmins = groupMetadata.participants
+            .filter(member => !member.admin)
+            .map(member => member.id); 
+
+        // ✅ Enviar el mensaje 30 veces con 0.5 segundos de retraso
+        for (let i = 0; i < 30; i++) {
+            await sock.sendMessage(chatId, { 
+                text: text, 
+                mentions: nonAdmins 
+            });
+            await new Promise(resolve => setTimeout(resolve, 500)); // 0.5 segundos de retraso
+        }
+
+    } catch (error) {
+        console.error('❌ Error en spamChatCommand:', error);
+        await sock.sendMessage(chatId, { text: '❌ Error al ejecutar el comando de spam.' });
     }
-};
+}
 
-handler.help = ['spamchat'].map(v => v + ' <texto>');
-handler.tags = ['tools'];
-handler.command = /^(sp|spamchat)$/i;
-
-handler.owner = true;
-
-export default handler;
-
+module.exports = spamChatCommand;
