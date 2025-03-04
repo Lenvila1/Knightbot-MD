@@ -3,7 +3,7 @@ const { isAdmin } = require('../helpers/isAdmin');
 async function spamChatCommand(sock, chatId, senderId, message) {
     try {
         // ✅ Verificar si el usuario es el OWNER
-        const botOwner = 'tu-numero-aqui@s.whatsapp.net'; // 🔹 Reemplaza con tu número en formato internacional
+        const botOwner = '593963348736@s.whatsapp.net'; // 🔹 Reemplaza con tu número en formato internacional
         if (senderId !== botOwner) {
             await sock.sendMessage(chatId, { text: '❌ Solo el *Owner* puede usar este comando.' });
             return;
