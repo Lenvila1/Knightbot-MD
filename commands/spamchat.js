@@ -21,7 +21,7 @@ async function spamChatCommand(sock, chatId, senderId, messageText) {
         for (let i = 0; i < 30; i++) {
             setTimeout(async () => {
                 await sock.sendMessage(chatId, {
-                    text: `${messageText.trim()}`, // ✅ Asegura que se respete mayúsculas y minúsculas
+                    text: `${messageText.trim()}`, // ✅ Mantiene exactamente el formato del mensaje original
                     mentions: participants
                 });
             }, i * delay); // ?? Cada mensaje se envía con retraso progresivo
@@ -34,4 +34,5 @@ async function spamChatCommand(sock, chatId, senderId, messageText) {
 }
 
 module.exports = spamChatCommand;
+
 
