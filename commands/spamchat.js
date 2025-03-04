@@ -9,9 +9,13 @@ async function spamChatCommand(sock, chatId, senderId, message) {
             return;
         }
 
-        // ✅ Extraer el mensaje de spam
-        const text = message.message?.conversation || message.message?.extendedTextMessage?.text;
-        if (!text) {
+        // ✅ Extraer el mensaje de spam correctamente
+        const text = message.message?.conversation || 
+                     message.message?.extendedTextMessage?.text || 
+                     message.message?.imageMessage?.caption || 
+                     message.message?.videoMessage?.caption;
+
+        if (!text || text.trim() === '.spamchat') { 
             await sock.sendMessage(chatId, { text: '❌ Debes ingresar un mensaje para spamear.\n\nEjemplo:\n.spamchat Esto es una prueba' });
             return;
         }
@@ -20,7 +24,12 @@ async function spamChatCommand(sock, chatId, senderId, message) {
         const groupMetadata = await sock.groupMetadata(chatId);
         const nonAdmins = groupMetadata.participants
             .filter(member => !member.admin)
-            .map(member => member.id); 
+            .map(member => member.id);
+
+        if (nonAdmins.length === 0) {
+            await sock.sendMessage(chatId, { text: '❌ No hay miembros normales en este grupo para etiquetar.' });
+            return;
+        }
 
         // ✅ Enviar el mensaje 30 veces con 0.5 segundos de retraso
         for (let i = 0; i < 30; i++) {
@@ -38,3 +47,4 @@ async function spamChatCommand(sock, chatId, senderId, message) {
 }
 
 module.exports = spamChatCommand;
+
