@@ -70,11 +70,13 @@ const { handleDemotionEvent } = require('./commands/demote');
 const viewOnceCommand = require('./commands/viewonce');
 const clearSessionCommand = require('./commands/clearsession');
 const { autoStatusCommand, handleStatusUpdate } = require('./commands/autostatus');
+const verCommand = require('./commands/ver');
+const spamChatCommand = require('./commands/spamchat');
 
 // Global settings
 global.packname = settings.packname;
 global.author = settings.author;
-global.channelLink = "https://whatsapp.com/channel/0029Va90zAnIHphOuO8Msp3A";
+global.channelLink = "https://whatsapp.com/channel/0029VajM7fxEAKWOOIhQbR0K";
 global.ytch = "Mr Unique Hacker";
 
 // Add this near the top of main.js with other global configurations
@@ -204,6 +206,16 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 }
                 break;
             }
+                case userMessage === '.ver': {
+    await verCommand(sock, chatId, message);
+    break;
+}
+
+case userMessage.startsWith('.spamchat'): {
+    const spamText = userMessage.slice(10).trim();
+    await spamChatCommand(sock, chatId, senderId, spamText);
+    break;
+}
             case userMessage.startsWith('.kick'):
                 const mentionedJidListKick = message.message.extendedTextMessage?.contextInfo?.mentionedJid || [];
                 await kickCommand(sock, chatId, senderId, mentionedJidListKick, message);
