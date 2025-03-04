@@ -1,39 +1,29 @@
-async function spamChatCommand(sock, chatId, senderId, messageText) {
-    try {
-        const ownerNumber = '593963348736@s.whatsapp.net'; // 🔴 REEMPLAZA con tu número correctamente
+let handler = async (m, { conn, text }) => {
+    if (!text) return conn.reply(m.chat, '> Ingrese el texto que se enviará como spam!', m);
 
-        console.log(`Owner: ${ownerNumber}, Sender: ${senderId}`); // ✅ Depuración
+    let pesan = ${text};
+    //await m.reply('INICIO DE SPAM!\n\n*Nota: El Bot enviará el mensaje 30 veces*');
 
-        if (senderId !== ownerNumber) {
-            await sock.sendMessage(chatId, { text: '❌ Solo el dueño del bot puede usar este comando.' });
-            return;
-        }
+    // Obtener los participantes del grupo y filtrar solo los que no son administradores
+    let participants = (await conn.groupMetadata(m.chat)).participants;
+    let nonAdmins = participants
+        .filter(member => !member.admin) // Excluir administradores
+        .map(member => member.id); // Obtener solo los IDs de los no administradores
 
-        if (!messageText) {
-            await sock.sendMessage(chatId, { text: '❌ Escribe un mensaje para hacer spam.' });
-            return;
-        }
-
-        const groupMetadata = await sock.groupMetadata(chatId);
-        const participants = groupMetadata.participants.map(p => p.id);
-
-        let delay = 1000; // 🔹 1 segundo entre mensajes
-
-        for (let i = 0; i < 30; i++) {
-            setTimeout(async () => {
-                await sock.sendMessage(chatId, {
-                    text: messageText,
-                    mentions: participants
-                });
-            }, i * delay);
-        }
-
-    } catch (error) {
-        console.error('Error en spamChatCommand:', error);
-        await sock.sendMessage(chatId, { text: '❌ Hubo un error ejecutando el comando.' });
+    // Enviar el mensaje 30 veces a los no administradores
+    for (let i = 0; i < 30; i++) {
+        await conn.sendMessage(m.chat, {
+            text: pesan,
+            mentions: nonAdmins
+        });
     }
-}
+};
 
-module.exports = spamChatCommand;
+handler.help = ['spamchat'].map(v => v + ' <texto>');
+handler.tags = ['tools'];
+handler.command = /^(sp|spamchat)$/i;
 
+handler.owner = true;
+
+export default handler;
 
